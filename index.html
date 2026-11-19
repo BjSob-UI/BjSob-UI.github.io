@@ -807,113 +807,181 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   });
 
   /* ---------- background music: original pieces generated live with Web Audio ----------
-     Koto, shakuhachi, temple bell, taiko and a low drone, one mood per theme. No audio files. */
+     Plucked koto and shamisen, shakuhachi and bamboo flute, taiko, conch horn, strings, choir,
+     wind and water. One piece per theme; no audio files and no borrowed melodies. */
   function makeMusic(ctx, dest) {
+    var SR = ctx.sampleRate;
     var IN = [0, 1, 5, 7, 8];          /* miyako-bushi: the dark, classic Japanese scale */
     var YO = [0, 2, 5, 7, 9];          /* folk scale: brighter, for the harvest piece */
     var noise = (function () {
-      var b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), d = b.getChannelData(0);
+      var b = ctx.createBuffer(1, SR * 2, SR), d = b.getChannelData(0);
       for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       return b;
     })();
-    function hall(sec, decay) {
-      var len = (ctx.sampleRate * sec) | 0, b = ctx.createBuffer(2, len, ctx.sampleRate);
-      for (var c = 0; c < 2; c++) { var d = b.getChannelData(c); for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay); }
+    var hallBuf = (function (sec, decay, pre) {   /* stereo hall with a short pre-delay */
+      var len = (SR * sec) | 0, p = (SR * pre) | 0, b = ctx.createBuffer(2, len, SR);
+      for (var c = 0; c < 2; c++) { var d = b.getChannelData(c); for (var i = p; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - (i - p) / (len - p), decay); }
       return b;
-    }
+    })(4.2, 2.7, .025);
+    var sawariCurve = (function () { var n = 1024, c = new Float32Array(n); for (var i = 0; i < n; i++) { var x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(2.6 * x); } return c; })();
+    var fluteWave = ctx.createPeriodicWave(new Float32Array([0, 0, 0, 0, 0, 0]), new Float32Array([0, 1, .32, .14, .06, .03]));
+    var fueWave = ctx.createPeriodicWave(new Float32Array([0, 0, 0, 0, 0, 0]), new Float32Array([0, 1, .5, .3, .16, .08]));
+
     var master = ctx.createGain(); master.gain.value = 0;
     var comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = .004; comp.release.value = .25;
     master.connect(comp); comp.connect(dest);
-    var verb = ctx.createConvolver(); verb.buffer = hall(3.4, 2.4);
-    var verbOut = ctx.createGain(); verbOut.gain.value = .55; verb.connect(verbOut); verbOut.connect(master);
 
     function rnd(a, b) { return a + Math.random() * (b - a); }
     function chance(p) { return Math.random() < p; }
     function mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); }
     function deg(root, scale, d) { var L = scale.length, o = Math.floor(d / L), i = ((d % L) + L) % L; return root + 12 * o + scale[i]; }
     function stopAll(nodes, t) { for (var i = 0; i < nodes.length; i++) nodes[i].stop(t); }
+    function panTo(out, x) {   /* one shared panner per position per destination, instead of one per note */
+      if (!ctx.createStereoPanner) return out;
+      var q = Math.round(Math.max(-1, Math.min(1, x)) * 10) / 10, c = out.__pan || (out.__pan = {});
+      if (!c[q]) { c[q] = ctx.createStereoPanner(); c[q].pan.value = q; c[q].connect(out); }
+      return c[q];
+    }
+    function fx(out, key, make) { var c = out.__fx || (out.__fx = {}); return c[key] || (c[key] = make()); }
+    function chord(root, set, shift) { return set.map(function (x) { return root + x + (shift || 0); }); }
 
-    /* ----- instruments: each plays one note into `out` at time t ----- */
-    function koto(out, t, m, v, len) {
-      len = len || 1.6;
-      var fr = mtof(m), a = ctx.createOscillator(), b = ctx.createOscillator(), bg = ctx.createGain(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-      a.type = 'triangle'; b.type = 'sawtooth'; bg.gain.value = .3; b.detune.value = 5;
-      [a, b].forEach(function (o) { o.frequency.setValueAtTime(fr * 1.012, t); o.frequency.exponentialRampToValueAtTime(fr, t + .05); });
-      f.type = 'lowpass'; f.Q.value = 3; f.frequency.setValueAtTime(Math.min(fr * 9, 12000), t); f.frequency.exponentialRampToValueAtTime(fr * 1.4, t + .5);
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .004); g.gain.exponentialRampToValueAtTime(.0005, t + len);
-      a.connect(f); b.connect(bg); bg.connect(f); f.connect(g); g.connect(out);
-      a.start(t); b.start(t); stopAll([a, b], t + len + .05);
+    /* ----- plucked strings: Karplus-Strong, rendered once per note and reused ----- */
+    var ksCache = {};
+    function ks(m, bright, decay, secs) {
+      var key = m + '|' + bright + '|' + decay;
+      if (ksCache[key]) return ksCache[key];
+      var N = Math.max(2, Math.round(SR / mtof(m) - .5)), len = (SR * secs) | 0, b = ctx.createBuffer(1, len, SR), y = b.getChannelData(0), i, lp = 0, mean = 0, pk = 0;
+      for (i = 0; i < N; i++) { lp += bright * ((Math.random() * 2 - 1) - lp); y[i] = lp; mean += lp; }
+      mean /= N; for (i = 0; i < N; i++) y[i] -= mean;
+      for (i = N; i < len; i++) y[i] = decay * .5 * (y[i - N] + (i - N - 1 >= 0 ? y[i - N - 1] : 0));
+      for (i = 0; i < Math.min(len, N * 6); i++) pk = Math.max(pk, Math.abs(y[i]));
+      if (pk > 0) for (i = 0; i < len; i++) y[i] /= pk;
+      return (ksCache[key] = b);
     }
-    function flute(out, t, m, v, len) {
-      var fr = mtof(m), o = ctx.createOscillator(), o2 = ctx.createOscillator(), o2g = ctx.createGain(), g = ctx.createGain();
-      o.type = 'sine'; o2.type = 'triangle'; o2g.gain.value = .18;
-      [o, o2].forEach(function (x) { x.frequency.setValueAtTime(fr * .955, t); x.frequency.exponentialRampToValueAtTime(fr, t + .22); });
-      o2.detune.value = 1200;
+    function koto(out, t, m, v, p, bend) {
+      var src = ctx.createBufferSource(); src.buffer = ks(m, .55, .9965, 2.8);
+      src.playbackRate.setValueAtTime(1.012, t); src.playbackRate.exponentialRampToValueAtTime(1, t + .05);
+      if (bend) { src.playbackRate.setValueAtTime(1, t + .28); src.playbackRate.linearRampToValueAtTime(Math.pow(2, bend / 12), t + .46); }
+      var body = fx(out, 'koto', function () { var b = ctx.createBiquadFilter(); b.type = 'peaking'; b.frequency.value = 280; b.Q.value = 1.1; b.gain.value = 4; b.connect(out); return b; });
+      var g = ctx.createGain(); g.gain.value = v;
+      src.connect(g); g.connect(panTo(body, p == null ? rnd(-.35, .35) : p));
+      src.start(t); src.stop(t + 2.8);
+    }
+    function grace(out, t, m, lower, v, p) { koto(out, t - .07, lower, v * .55, p); koto(out, t, m, v, p); }
+    function gliss(out, t, root, sc, from, to, gap, v) {   /* sararin: a quick sweep across the strings */
+      var dir = to > from ? 1 : -1, n = 0;
+      for (var d = from; dir > 0 ? d <= to : d >= to; d += dir, n++) koto(out, t + n * gap, deg(root, sc, d), v * (.7 + .3 * n / Math.abs(to - from)), -.6 + 1.2 * n / Math.abs(to - from));
+    }
+    function shamisen(out, t, m, v, p) {
+      var chain = fx(out, 'sham', function () {
+        var sh = ctx.createWaveShaper(), hp = ctx.createBiquadFilter(), buzz = ctx.createBiquadFilter();
+        sh.curve = sawariCurve; hp.type = 'highpass'; hp.frequency.value = 160;
+        buzz.type = 'peaking'; buzz.frequency.value = 2600; buzz.Q.value = 1.4; buzz.gain.value = 7;
+        sh.connect(hp); hp.connect(buzz); buzz.connect(out); return sh;
+      });
+      var src = ctx.createBufferSource(), snap = ctx.createBufferSource(), g = ctx.createGain(), sg = ctx.createGain();
+      src.buffer = ks(m, .95, .99, 1.1); snap.buffer = SNAP; g.gain.value = v * .7; sg.gain.value = v * .25;
+      var d = panTo(chain, p == null ? .25 : p);
+      src.connect(g); g.connect(d); snap.connect(sg); sg.connect(d);
+      src.start(t); snap.start(t);
+    }
+
+    /* ----- breath: shakuhachi (dark, airy) and fue (bright festival flute) ----- */
+    function flute(out, t, m, v, len, opt) {
+      opt = opt || {};
+      var fr = mtof(m), o = ctx.createOscillator(), g = ctx.createGain();
+      o.setPeriodicWave(opt.fue ? fueWave : fluteWave);
+      o.frequency.setValueAtTime(fr * (opt.fue ? .985 : .95), t); o.frequency.exponentialRampToValueAtTime(fr, t + (opt.fue ? .08 : .24));
+      if (opt.meri) { o.frequency.setValueAtTime(fr, t + len * .62); o.frequency.exponentialRampToValueAtTime(fr * .944, t + len * .95); }
       var lfo = ctx.createOscillator(), depth = ctx.createGain();
-      lfo.frequency.value = rnd(4.6, 5.6); depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(fr * .014, t + len * .7);
+      lfo.frequency.value = opt.fue ? rnd(5.8, 6.6) : rnd(4.4, 5.4);
+      depth.gain.setValueAtTime(0, t); depth.gain.setValueAtTime(0, t + len * .35); depth.gain.linearRampToValueAtTime(fr * (opt.fue ? .01 : .017), t + len * .75);
       lfo.connect(depth); depth.connect(o.frequency);
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .2); g.gain.setValueAtTime(v, t + len * .72); g.gain.linearRampToValueAtTime(0, t + len);
-      var n = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), ng = ctx.createGain();
-      n.buffer = noise; n.loop = true; bp.type = 'bandpass'; bp.frequency.value = fr * 2; bp.Q.value = 1.4;
-      ng.gain.setValueAtTime(0, t); ng.gain.linearRampToValueAtTime(v * .55, t + .07); ng.gain.linearRampToValueAtTime(v * .045, t + .35); ng.gain.linearRampToValueAtTime(0, t + len);
-      o.connect(g); o2.connect(o2g); o2g.connect(g); g.connect(out); n.connect(bp); bp.connect(ng); ng.connect(out);
-      o.start(t); o2.start(t); lfo.start(t); n.start(t, Math.random()); stopAll([o, o2, lfo, n], t + len + .05);
+      var att = opt.fue ? .05 : .16;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + att); g.gain.setValueAtTime(v, t + len * .7); g.gain.linearRampToValueAtTime(0, t + len);
+      var n = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), hp = ctx.createBiquadFilter(), ng = ctx.createGain();
+      n.buffer = noise; n.loop = true; bp.type = 'bandpass'; bp.frequency.value = fr * 1.6; bp.Q.value = .9; hp.type = 'highpass'; hp.frequency.value = 500;
+      var br = opt.fue ? .25 : .5;   /* shakuhachi carries far more breath */
+      ng.gain.setValueAtTime(0, t); ng.gain.linearRampToValueAtTime(v * br * 1.6, t + .05); ng.gain.linearRampToValueAtTime(v * br * .35, t + .3); ng.gain.setValueAtTime(v * br * .35, t + len * .7); ng.gain.linearRampToValueAtTime(0, t + len);
+      var dest2 = panTo(out, opt.pan == null ? -.2 : opt.pan);
+      o.connect(g); g.connect(dest2); n.connect(bp); bp.connect(hp); hp.connect(ng); ng.connect(dest2);
+      o.start(t); lfo.start(t); n.start(t, Math.random()); stopAll([o, lfo, n], t + len + .05);
     }
+
+    /* ----- percussion, rendered once into buffers so each hit costs almost nothing ----- */
+    function render(len, f) { var b = ctx.createBuffer(1, (SR * len) | 0, SR), y = b.getChannelData(0); f(y); return b; }
+    var HITS = [0, 1, 2].map(function (size) {
+      var base = size === 2 ? 50 : size === 1 ? 82 : 190, decay = size === 2 ? 1.3 : size === 1 ? .55 : .14;
+      var fc = size === 2 ? 600 : size === 1 ? 1400 : 4200, a = 1 - Math.exp(-2 * Math.PI * fc / SR), nAmt = (size === 0 ? .9 : .6) / Math.sqrt(a) * .35;
+      var nDec = decay * (size === 0 ? .6 : .3);
+      return render(decay + .05, function (y) {
+        var p1 = 0, p2 = 0, lp = 0;
+        for (var i = 0; i < y.length; i++) {
+          var tt = i / SR, f = base * (1 + 1.3 * Math.exp(-tt / .022));
+          p1 += 2 * Math.PI * f / SR; p2 += 2 * Math.PI * f * 1.58 / SR; lp += a * ((Math.random() * 2 - 1) - lp);
+          var att = Math.min(1, tt / .002);
+          y[i] = att * (Math.sin(p1) * Math.exp(-tt * 6.9 / decay) + .35 * Math.sin(p2) * Math.exp(-tt * 6.9 / (decay * .45)) + nAmt * lp * Math.exp(-tt * 6.9 / nDec));
+        }
+      });
+    });
+    var CLACK = render(.09, function (y) { for (var i = 0; i < y.length; i++) { var tt = i / SR; y[i] = (Math.sin(2 * Math.PI * 2150 * tt) * .75 + (Math.random() * 2 - 1) * .25) * Math.exp(-tt / .011); } });
+    var SNAP = render(.04, function (y) { var prev = 0; for (var i = 0; i < y.length; i++) { var n = Math.random() * 2 - 1; y[i] = (n - prev) * Math.exp(-i / SR / .006); prev = n; } });
+    function hitAt(out, buf, t, v, p) { var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = buf; g.gain.value = v; src.connect(g); g.connect(panTo(out, p)); src.start(t); }
+    function taiko(out, t, v, size, p) { hitAt(out, HITS[size], t, v, p == null ? 0 : p); }   /* size 2: odaiko, 1: chu-daiko, 0: shime-daiko */
+    function clack(out, t, v, p) { hitAt(out, CLACK, t, v * 1.4, p == null ? .4 : p); }   /* hyoshigi wooden clappers */
     function bell(out, t, m, v) {
-      var fr = mtof(m), parts = [[1, 1, 5], [2.76, .45, 3], [5.4, .25, 1.6], [8.93, .12, .9]];
-      parts.forEach(function (p) {
+      var fr = mtof(m), d = panTo(out, rnd(-.5, .5));
+      [[1, 1, 5], [2.76, .45, 3], [5.4, .25, 1.6], [8.93, .12, .9]].forEach(function (p) {
         var o = ctx.createOscillator(), g = ctx.createGain();
         o.frequency.value = fr * p[0]; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v * p[1], t + .005); g.gain.exponentialRampToValueAtTime(.0003, t + p[2]);
-        o.connect(g); g.connect(out); o.start(t); o.stop(t + p[2] + .05);
+        o.connect(g); g.connect(d); o.start(t); o.stop(t + p[2] + .05);
       });
     }
-    function taiko(out, t, v, size) {
-      var base = size === 2 ? 52 : size === 1 ? 78 : 140, decay = size === 2 ? 1.1 : size === 1 ? .5 : .18;
-      var o = ctx.createOscillator(), g = ctx.createGain();
-      o.frequency.setValueAtTime(base * 2.4, t); o.frequency.exponentialRampToValueAtTime(base, t + .07);
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .003); g.gain.exponentialRampToValueAtTime(.0005, t + decay);
-      o.connect(g); g.connect(out); o.start(t); o.stop(t + decay + .05);
-      var n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), ng = ctx.createGain();
-      n.buffer = noise; f.type = 'lowpass'; f.frequency.value = size === 2 ? 700 : size === 1 ? 1500 : 3500;
-      ng.gain.setValueAtTime(v * .7, t); ng.gain.exponentialRampToValueAtTime(.0005, t + decay * .35);
-      n.connect(f); f.connect(ng); ng.connect(out); n.start(t, Math.random()); n.stop(t + decay);
+
+    /* ----- sustained layers ----- */
+    function horn(out, t, m, v, len) {   /* horagai conch call: a rough, rising horn */
+      var fr = mtof(m), os = [], f = ctx.createBiquadFilter(), g = ctx.createGain();
+      f.type = 'lowpass'; f.Q.value = 4; f.frequency.setValueAtTime(250, t); f.frequency.linearRampToValueAtTime(1300, t + len * .4); f.frequency.linearRampToValueAtTime(400, t + len);
+      ['sawtooth', 'square'].forEach(function (ty, i) {
+        var o = ctx.createOscillator(); o.type = ty; o.detune.value = i ? 8 : -8;
+        o.frequency.setValueAtTime(fr * .89, t); o.frequency.exponentialRampToValueAtTime(fr, t + .45);
+        var og = ctx.createGain(); og.gain.value = i ? .4 : 1; o.connect(og); og.connect(f); os.push(o);
+      });
+      var vib = ctx.createOscillator(), vd = ctx.createGain(); vib.frequency.value = 4.6; vd.gain.value = 9; vib.connect(vd); os.forEach(function (o) { vd.connect(o.detune); }); os.push(vib);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .4); g.gain.setValueAtTime(v, t + len * .7); g.gain.linearRampToValueAtTime(0, t + len);
+      f.connect(g); g.connect(panTo(out, -.1)); os.forEach(function (o) { o.start(t); }); stopAll(os, t + len + .05);
     }
-    function clack(out, t, v) {   /* hyoshigi: two wooden blocks struck together */
-      var n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-      n.buffer = noise; f.type = 'bandpass'; f.frequency.value = rnd(1900, 2300); f.Q.value = 6;
-      g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0005, t + .07);
-      n.connect(f); f.connect(g); g.connect(out); n.start(t, Math.random()); n.stop(t + .09);
-    }
-    function strings(out, t, tones, v, len, trem) {   /* string section: detuned saws, slow bow attack, gentle vibrato */
-      var f = ctx.createBiquadFilter(), g = ctx.createGain(), os = [];
-      f.type = 'lowpass'; f.frequency.setValueAtTime(700, t); f.frequency.linearRampToValueAtTime(1600, t + len * .5); f.frequency.linearRampToValueAtTime(900, t + len); f.Q.value = .5;
-      var vib = ctx.createOscillator(), vd = ctx.createGain(); vib.frequency.value = 5; vd.gain.value = 7; vib.connect(vd); os.push(vib);
-      tones.forEach(function (m) {
-        [-9, 9].forEach(function (cents) {
+    function strings(out, t, tones, v, len, trem) {
+      var f = ctx.createBiquadFilter(), hp = ctx.createBiquadFilter(), g = ctx.createGain(), os = [];
+      f.type = 'lowpass'; f.Q.value = .5; f.frequency.setValueAtTime(650, t); f.frequency.linearRampToValueAtTime(1700, t + len * .5); f.frequency.linearRampToValueAtTime(850, t + len);
+      hp.type = 'highpass'; hp.frequency.value = 80;
+      var vib = ctx.createOscillator(), vd = ctx.createGain(); vib.frequency.value = 5.2; vd.gain.value = 6; vib.connect(vd); os.push(vib);
+      tones.forEach(function (m, ti) {
+        [-11, 0, 11].forEach(function (cents, vi) {
           var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m); o.detune.value = cents + rnd(-3, 3);
-          vd.connect(o.detune); o.connect(f); os.push(o);
+          vd.connect(o.detune); var pn = panTo(f, (vi - 1) * .55 + (ti - tones.length / 2) * .08); o.connect(pn); os.push(o);
         });
       });
-      var att = Math.min(1.6, len * .35);
+      var att = Math.min(1.8, len * .35);
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + att); g.gain.setValueAtTime(v, t + len * .7); g.gain.linearRampToValueAtTime(0, t + len);
+      f.connect(hp);
       if (trem) {
         var tr = ctx.createOscillator(), td = ctx.createGain(), tg = ctx.createGain();
-        tr.frequency.value = 11; td.gain.value = .45; tg.gain.value = .55; tr.connect(td); td.connect(tg.gain); f.connect(tg); tg.connect(g); os.push(tr);
-      } else f.connect(g);
+        tr.frequency.value = 11; td.gain.value = .45; tg.gain.value = .55; tr.connect(td); td.connect(tg.gain); hp.connect(tg); tg.connect(g); os.push(tr);
+      } else hp.connect(g);
       g.connect(out); os.forEach(function (o) { o.start(t); }); stopAll(os, t + len + .05);
     }
-    function choir(out, t, tones, v, len) {   /* soft "aah" voices: buzzing tone shaped by vowel formants */
+    function choir(out, t, tones, v, len) {
       var g = ctx.createGain(), mix = ctx.createGain(), os = [];
-      mix.gain.value = 1;
+      mix.gain.value = 1.4;
       [[730, 9, 1], [1090, 11, .5], [2440, 14, .22]].forEach(function (fm) {
         var bp = ctx.createBiquadFilter(), bg = ctx.createGain(); bp.type = 'bandpass'; bp.frequency.value = fm[0]; bp.Q.value = fm[1]; bg.gain.value = fm[2] * 3;
         mix.connect(bp); bp.connect(bg); bg.connect(g);
       });
-      var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.Q.value = .3;
-      var body = ctx.createGain(); body.gain.value = .35; mix.connect(lp); lp.connect(body); body.connect(g);
+      var lp = ctx.createBiquadFilter(), body = ctx.createGain(); lp.type = 'lowpass'; lp.frequency.value = 900; body.gain.value = .35; mix.connect(lp); lp.connect(body); body.connect(g);
       tones.forEach(function (m) {
-        [-6, 0, 6].forEach(function (cents, i) {
+        [-7, 7].forEach(function (cents) {
           var o = ctx.createOscillator(), vib = ctx.createOscillator(), vd = ctx.createGain();
           o.type = 'sawtooth'; o.frequency.value = mtof(m); o.detune.value = cents;
           vib.frequency.value = rnd(4.5, 5.8); vd.gain.value = rnd(8, 14); vib.connect(vd); vd.connect(o.detune);
@@ -924,133 +992,173 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + att); g.gain.setValueAtTime(v, t + len * .65); g.gain.linearRampToValueAtTime(0, t + len);
       g.connect(out); os.forEach(function (o) { o.start(t); }); stopAll(os, t + len + .05);
     }
-    function chord(root, set, shift) { return set.map(function (x) { return root + x + (shift || 0); }); }
     function drone(out, t, m, v, len) {
       var fr = mtof(m), f = ctx.createBiquadFilter(), g = ctx.createGain(), os = [];
-      f.type = 'lowpass'; f.frequency.value = 420; f.Q.value = .7;
-      [[0, 'sawtooth', .5], [7, 'sawtooth', .32], [0, 'sine', 1.2]].forEach(function (p, i) {
-        var o = ctx.createOscillator(), og = ctx.createGain(); o.type = p[1]; o.frequency.value = fr * Math.pow(2, p[0] / 12); o.detune.value = i === 0 ? -6 : i === 1 ? 5 : 0;
+      f.type = 'lowpass'; f.frequency.value = 380; f.Q.value = .7;
+      [[0, 'sawtooth', .5, -6], [7, 'sawtooth', .3, 5], [0, 'sine', 1.2, 0]].forEach(function (p) {
+        var o = ctx.createOscillator(), og = ctx.createGain(); o.type = p[1]; o.frequency.value = fr * Math.pow(2, p[0] / 12); o.detune.value = p[3];
         og.gain.value = p[2]; o.connect(og); og.connect(f); os.push(o);
       });
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + Math.min(2, len * .3)); g.gain.setValueAtTime(v, t + len * .75); g.gain.linearRampToValueAtTime(0, t + len);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + Math.min(2.5, len * .3)); g.gain.setValueAtTime(v, t + len * .75); g.gain.linearRampToValueAtTime(0, t + len);
       f.connect(g); g.connect(out); os.forEach(function (o) { o.start(t); }); stopAll(os, t + len + .05);
     }
 
-    /* ----- melodic memory: a short motif that repeats with small changes, so it sounds composed, not random ----- */
-    function motif(steps, density, lo, hi, every) {
-      var m = [], d = Math.round(rnd(lo, hi) / 2) * 1;
-      for (var s = 0; s < steps; s += every) {
-        if (s === 0 || chance(density)) { d = Math.max(lo, Math.min(hi, d + Math.round(rnd(-2.4, 2.4)))); m.push([s, d]); }
-      }
-      return m;
+    /* ----- ambience: wind through the valley, water drops ----- */
+    function wind(sess, level, centre) {
+      var t = ctx.currentTime;
+      [-.7, .7].forEach(function (p, i) {
+        var n = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), g = ctx.createGain(), lfo = ctx.createOscillator(), ld = ctx.createGain(), amp = ctx.createOscillator(), ad = ctx.createGain();
+        n.buffer = noise; n.loop = true; bp.type = 'bandpass'; bp.Q.value = .9; bp.frequency.value = centre * (i ? 1.3 : 1);
+        lfo.frequency.value = i ? .061 : .083; ld.gain.value = centre * .55; lfo.connect(ld); ld.connect(bp.frequency);
+        amp.frequency.value = i ? .097 : .13; ad.gain.value = level * .7; g.gain.value = level; amp.connect(ad); ad.connect(g.gain);
+        n.connect(bp); bp.connect(g); g.connect(panTo(sess.g, p));
+        n.start(t, Math.random() * 1.5); lfo.start(t); amp.start(t); sess.amb.push(n, lfo, amp);
+      });
     }
-    function vary(m, lo, hi) {
-      return m.map(function (e) { return chance(.25) ? [e[0], Math.max(lo, Math.min(hi, e[1] + (chance(.5) ? 1 : -1)))] : e; });
+    function drop(out, t, v) {
+      var o = ctx.createOscillator(), g = ctx.createGain(), f = rnd(900, 1700);
+      o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 2.3, t + .05);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .004); g.gain.exponentialRampToValueAtTime(.0005, t + .13);
+      o.connect(g); g.connect(panTo(out, rnd(-.8, .8))); o.start(t); o.stop(t + .16);
     }
 
-    /* ----- the four pieces. play(step, t, s, out): step counts 16th notes, s = seconds per 16th ----- */
+    /* ----- melodic memory: a short motif repeated with small changes ----- */
+    function motif(steps, density, lo, hi, every) {
+      var m = [], d = Math.round(rnd(lo, hi));
+      for (var s = 0; s < steps; s += every) if (s === 0 || chance(density)) { d = Math.max(lo, Math.min(hi, d + Math.round(rnd(-2.4, 2.4)))); m.push([s, d]); }
+      return m;
+    }
+    function vary(m, lo, hi) { return m.map(function (e) { return chance(.25) ? [e[0], Math.max(lo, Math.min(hi, e[1] + (chance(.5) ? 1 : -1)))] : e; }); }
+    function phrase(startMax, lo, hi, lens) {   /* a few long breaths for the flute */
+      var out = [], pos = (rnd(0, startMax + 1) | 0) * 2, d = (rnd(lo, hi) | 0);
+      for (var n = 0; n < 3 && pos < 28; n++) { var L = lens[(Math.random() * lens.length) | 0]; out.push([pos, d, L, chance(.4)]); pos += L + (chance(.45) ? 2 : 0); d = Math.max(lo, Math.min(hi, d + (chance(.5) ? 1 : -1) * ((rnd(1, 3)) | 0))); }
+      return out;
+    }
+
+    /* ----- the four pieces. play(k, t, s, out): k counts 16th notes, s = seconds per 16th ----- */
     var MOODS = {
-      gold: {   /* calm koto by still water */
-        bpm: 72, root: 62, scale: IN, wet: .55, st: {},
+      gold: {   /* still water: koto by the pond, a distant shakuhachi */
+        bpm: 66, root: 62, scale: IN, wet: .5, lvl: 1.25,
+        amb: function (sess) { wind(sess, .018, 650); },
         play: function (k, t, s, out) {
-          var st = this.st, r = this.root, sc = this.scale, bar = Math.floor(k / 16), i = k % 32;
-          if (k % 64 === 0) { drone(out, t, r - 24, .07, s * 64 + 1); }
-          if (i === 0) { st.m = (!st.m || bar % 8 === 0) ? motif(32, .38, -1, 7, 2) : vary(st.m, -1, 7); }
-          st.m.forEach(function (e) { if (e[0] === i) koto(out, t + rnd(0, .012), deg(r, sc, e[1]), .2 * rnd(.75, 1), 1.8); });
-          if (k % 16 === 0) koto(out, t, deg(r, sc, bar % 4 === 3 ? 3 : 0) - 12, .16, 2.4);
-          if (k % 16 === 8 && chance(.4)) koto(out, t, deg(r, sc, 2) - 12, .1, 1.6);
-          if (k % 64 === 32 && chance(.7)) bell(out, t, r + 12, .05);
+          var st = this.st, r = this.root, sc = this.scale, bar = Math.floor(k / 16), i = k % 32, sec = Math.floor(k / 128) % 2;
           var PG = [[0, 7, 12, 19], [-4, 1, 8, 13], [5, 12, 17], [-5, 0, 7, 12]];
-          if (k % 32 === 0) strings(out, t, chord(r - 12, PG[(k / 32) % 4]), .028, s * 32 + 1.6);
-          if (k % 128 === 64) choir(out, t, chord(r, PG[((k / 32) % 4)]), .05, s * 64);
+          if (k % 128 === 0) { drone(out, t, r - 24, .045, s * 128 + 1); gliss(out, t, r, sc, -1, 6, .06, .14); }
+          if (k % 32 === 0) strings(out, t, chord(r - 12, PG[(k / 32) % 4]), .022, s * 32 + 1.8);
+          if (i === 0) st.m = (!st.m || bar % 8 === 0) ? motif(32, sec ? .42 : .3, -1, 7, 2) : vary(st.m, -1, 7);
+          if (k % 128 >= 4) st.m.forEach(function (e) {
+            if (e[0] !== i) return;
+            var m = deg(r, sc, e[1]), v = .26 * rnd(.75, 1);
+            if (chance(.14)) grace(out, t, m, deg(r, sc, e[1] - 1), v); else koto(out, t + rnd(0, .012), m, v, null, chance(.08) ? 1 : 0);
+          });
+          if (k % 16 === 0) koto(out, t, deg(r, sc, bar % 4 === 3 ? 3 : 0) - 12, .22, -.3);
+          if (k % 16 === 8 && chance(.35)) koto(out, t, deg(r, sc, 2) - 12, .14, -.3);
+          if (sec && i === 0 && (bar % 8 === 2 || bar % 8 === 6)) st.fl = phrase(1, 4, 9, [6, 8, 10]);
+          if (sec && st.fl && bar % 4 >= 2) st.fl.forEach(function (e) { if (e[0] === (k % 32)) flute(out, t, deg(r, sc, e[1]), .1, e[2] * s + .3, { meri: e[3], pan: .35 }); });
+          if (k % 128 === 64 && chance(.7)) bell(out, t, r + 12, .045);
+          if (k % 4 === 1 && chance(.05)) drop(out, t, .05);
+          if (k % 256 === 192) choir(out, t, chord(r, PG[(k / 32) % 4]), .04, s * 64);
         }
       },
-      silver: {   /* mist over the mountains: shakuhachi and bells */
-        bpm: 56, root: 64, scale: IN, wet: .9, st: {},
+      silver: {   /* mountain mist: shakuhachi solo over wind, voices and a far-off drum */
+        bpm: 54, root: 64, scale: IN, wet: .85,
+        amb: function (sess) { wind(sess, .04, 900); },
         play: function (k, t, s, out) {
-          var st = this.st, r = this.root, sc = this.scale;
-          if (k % 64 === 0) { drone(out, t, r - 24, .06, s * 64 + 1.5); }
-          if (k % 32 === 0) {
-            var at = rnd(0, 2) | 0, d = (rnd(1, 6) | 0);
-            st.phrase = [];
-            for (var n = 0, pos = at * 2; n < 3 && pos < 28; n++) { var L = [4, 6, 8][(Math.random() * 3) | 0]; st.phrase.push([pos, d, L]); pos += L + (chance(.4) ? 2 : 0); d = Math.max(0, Math.min(8, d + (chance(.5) ? 1 : -1) * ((rnd(1, 3)) | 0))); }
-          }
-          var i = k % 32;
-          (st.phrase || []).forEach(function (e) { if (e[0] === i) flute(out, t, deg(r, sc, e[1]), .13, e[2] * s + .25); });
-          if (k % 4 === 2 && chance(.12)) koto(out, t, deg(r, sc, (rnd(3, 9)) | 0), .09, 2.2);
-          if (k % 32 === 16 && chance(.6)) bell(out, t, deg(r, sc, chance(.5) ? 5 : 0), .05);
+          var st = this.st, r = this.root, sc = this.scale, i = k % 32;
           var PS = [[0, 7, 12], [1, 8, 13], [-4, 1, 8], [-5, 0, 7]];
-          if (k % 64 === 0) { var c = PS[(k / 64) % 4]; strings(out, t, chord(r - 24, c), .03, s * 64 + 2); choir(out, t + s * 4, chord(r - 12, c), .055, s * 58); }
+          if (k % 64 === 0) { var c = PS[(k / 64) % 4]; drone(out, t, r - 24, .05, s * 64 + 1.5); strings(out, t, chord(r - 24, c), .026, s * 64 + 2); choir(out, t + s * 4, chord(r - 12, c), .05, s * 58); }
+          if (i === 0) st.fl = phrase(1, 1, 8, [4, 6, 8]);
+          (st.fl || []).forEach(function (e) { if (e[0] === i) flute(out, t, deg(r, sc, e[1]), .14, e[2] * s + .3, { meri: e[3], pan: -.15 }); });
+          if (k % 64 === 0) taiko(out, t, .3, 2, .2);
+          if (k % 64 === 40 && chance(.6)) taiko(out, t, .16, 2, .2);
+          if (k % 4 === 2 && chance(.09)) koto(out, t, deg(r, sc, (rnd(4, 10)) | 0), .13, rnd(-.6, .6));
+          if (k % 32 === 16 && chance(.5)) bell(out, t, deg(r, sc, chance(.5) ? 5 : 0), .045);
         }
       },
-      green: {   /* harvest festival in the village */
-        bpm: 98, root: 67, scale: YO, wet: .4, st: {},
+      green: {   /* harvest festival: shamisen, fue, festival drums */
+        bpm: 100, root: 67, scale: YO, wet: .38, lvl: 1.3,
+        amb: function (sess) { wind(sess, .01, 1200); },
         play: function (k, t, s, out) {
-          var st = this.st, r = this.root, sc = this.scale, bar = Math.floor(k / 16), i = k % 32;
-          if (k % 128 === 0) drone(out, t, r - 24, .045, s * 128 + 1);
-          if (i === 0) { st.m = (!st.m || bar % 8 === 0) ? motif(32, .72, 0, 8, 2) : vary(st.m, 0, 8); }
-          st.m.forEach(function (e) { if (e[0] === i) koto(out, t, deg(r, sc, e[1]), .17 * (e[0] % 8 === 0 ? 1 : .8), 1.1); });
-          if (k % 8 === 0) koto(out, t, deg(r, sc, (k % 16 === 0) ? 0 : 3) - 12, .15, 1);
-          if (k % 8 === 4) taiko(out, t, .38, 0);
-          if (k % 16 === 0) taiko(out, t, .4, 1);
-          if (k % 4 === 2 && chance(.35)) clack(out, t, .12);
-          if (k % 64 === 32) {
-            st.fl = [[0, 7, 6], [8, 6, 4], [12, 4, 4]].map(function (e) { return [e[0], e[1] + ((rnd(-1, 2)) | 0), e[2]]; });
-          }
-          if (k % 64 >= 32 && st.fl) st.fl.forEach(function (e) { if (e[0] === (k % 64) - 32) flute(out, t, deg(r, sc, e[1]), .09, e[2] * s + .15); });
+          var st = this.st, r = this.root, sc = this.scale, bar = Math.floor(k / 16), i = k % 32, sec = Math.floor(k / 128) % 2;
           var PF = [[0, 7, 12, 14], [5, 9, 12, 17], [-3, 2, 9, 14], [2, 9, 14, 19]];
-          if (k % 32 === 0) strings(out, t, chord(r - 12, PF[(k / 32) % 4]), .024, s * 32 + 1);
-          if (k % 256 === 128) choir(out, t, chord(r, PF[0]), .04, s * 64);
+          if (k % 32 === 0) strings(out, t, chord(r - 12, PF[(k / 32) % 4]), .02, s * 32 + 1);
+          if (i === 0) st.m = (!st.m || bar % 8 === 0) ? motif(32, .7, 0, 8, 2) : vary(st.m, 0, 8);
+          st.m.forEach(function (e) {
+            if (e[0] !== i) return;
+            if (sec) shamisen(out, t, deg(r, sc, e[1]), .2, .3);
+            else koto(out, t, deg(r, sc, e[1]), .22, .2);
+          });
+          if (sec && i === 0 && bar % 4 === 0) st.fu = motif(32, .5, 4, 10, 4);
+          if (sec && st.fu && bar % 4 >= 2) st.fu.forEach(function (e) { if (e[0] === i) flute(out, t, deg(r, sc, e[1]) + 12, .06, s * 3.5, { fue: true, pan: -.35 }); });
+          if (k % 4 === 0) koto(out, t, deg(r, sc, [0, 2, 3, 2][(k / 4) % 4]) - 12, .15, -.4);
+          var SH = [1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1];
+          if (SH[k % 16]) taiko(out, t, k % 4 === 0 ? .34 : .2, 0, .3);
+          if (k % 16 === 0 || (k % 16 === 10 && chance(.5))) taiko(out, t, .4, 1, -.1);
+          if (k % 4 === 2 && chance(.3)) clack(out, t, .1);
+          if (k % 256 === 128) choir(out, t, chord(r, PF[0]), .035, s * 64);
         }
       },
-      red: {   /* the clan marches to war */
-        bpm: 134, root: 50, scale: IN, wet: .3, lvl: .55, st: {},
+      red: {   /* war drums: the clan marches to battle */
+        bpm: 132, root: 50, scale: IN, wet: .3, lvl: .55,
+        amb: function (sess) { wind(sess, .02, 320); },
         play: function (k, t, s, out) {
-          var st = this.st, r = this.root, sc = this.scale, bar = Math.floor(k / 16), i = k % 16;
+          var r = this.root, sc = this.scale, bar = Math.floor(k / 16), i = k % 16, b8 = bar % 8;
           var BIG = [1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0], MID = [0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1];
-          var fill = bar % 4 === 3 && i >= 8;
-          if (k % 128 === 0) drone(out, t, r - 12, .06, s * 128 + .5);
+          var fill = b8 === 7 && i >= 8;
+          if (k % 128 === 0) { drone(out, t, r - 12, .06, s * 128 + .5); horn(out, t, r - 12, .09, s * 12); }
+          if (k % 128 === 64) horn(out, t, r - 5, .08, s * 10);
           if (BIG[i] && !fill) taiko(out, t, .72, 2);
-          if (fill) taiko(out, t, .3 + (i - 8) * .055, i % 2 ? 0 : 1);
-          else if (MID[i]) taiko(out, t, .34, 1);
-          if (i % 4 === 2) clack(out, t, .16);
+          if (fill) taiko(out, t, .3 + (i - 8) * .055, i % 2 ? 0 : 1, i % 2 ? .3 : -.3);
+          else if (MID[i]) taiko(out, t, .34, 1, -.25);
+          if (b8 >= 4 && !fill) taiko(out, t, i % 4 === 0 ? .22 : .12, 0, .35);
+          if (i % 4 === 2) clack(out, t, .14);
           var RIFF = [0, 0, 1, 0, 3, 0, 1, 0, 0, 0, 1, 0, 4, 3, 1, -1];
-          if (bar % 8 >= 2) koto(out, t, deg(r, sc, RIFF[i] + (bar % 8 >= 6 ? 2 : 0)), i % 4 === 0 ? .2 : .13, .45);
-          if (bar % 8 === 4 && i === 0) { flute(out, t, deg(r, sc, 9), .13, s * 6 + .2); }
-          if (bar % 8 === 5 && i === 0) { flute(out, t, deg(r, sc, 8), .12, s * 4 + .1); flute(out, t + s * 4, deg(r, sc, 6), .12, s * 8 + .3); }
-          if (bar % 8 === 7 && i === 12) taiko(out, t, .8, 2);
+          if (b8 >= 2) shamisen(out, t, deg(r, sc, RIFF[i] + (b8 >= 6 ? 2 : 0)) + 12, i % 4 === 0 ? .2 : .13, .3);
+          if (b8 === 4 && i === 0) flute(out, t, deg(r, sc, 9) + 12, .11, s * 6 + .2, { meri: true, pan: -.3 });
+          if (b8 === 5 && i === 0) { flute(out, t, deg(r, sc, 8) + 12, .1, s * 4 + .1, { pan: -.3 }); flute(out, t + s * 4, deg(r, sc, 6) + 12, .1, s * 8 + .3, { meri: true, pan: -.3 }); }
+          if (b8 === 7 && i === 12) taiko(out, t, .8, 2);
           var PR = [[0, 7, 12], [1, 8, 13], [-4, 1, 8], [-5, 0, 7]];
-          if (k % 32 === 0) strings(out, t, chord(r, PR[(k / 32) % 4]), .045, s * 32, true);
-          if (k % 128 === 64) choir(out, t, chord(r + 12, [-4, 1, 8, 13]), .07, s * 48);
-          if (k % 128 === 112) choir(out, t, chord(r + 12, [0, 7, 12]), .07, s * 16 + 1.2);
+          if (k % 32 === 0) strings(out, t, chord(r, PR[(k / 32) % 4]), .04, s * 32, true);
+          if (k % 128 === 64) choir(out, t, chord(r + 12, [-4, 1, 8, 13]), .065, s * 48);
+          if (k % 128 === 112) choir(out, t, chord(r + 12, [0, 7, 12]), .065, s * 16 + 1.2);
         }
       }
     };
-    var buses = {};
-    function busFor(name) {
-      if (buses[name]) return buses[name];
-      var g = ctx.createGain(), wet = ctx.createGain();
-      g.gain.value = 0; wet.gain.value = MOODS[name].wet;
-      g.connect(master); g.connect(wet); wet.connect(verb);
-      return (buses[name] = g);
-    }
-    var mood = 'gold', step = 0, nextT = 0;
-    function schedule(until) {
-      var M = MOODS[mood], s = 60 / M.bpm / 4, out = busFor(mood);
-      while (nextT < until) { M.play(step, nextT, s, out); nextT += s; step++; }
-    }
+
+    /* ----- sessions: each theme gets its own fresh mix and reverb, so a switch cuts the old piece cleanly ----- */
+    var session = null, mood = 'gold', step = 0, nextT = 0;
     function ramp(p, to, t, secs) { p.cancelScheduledValues(t); p.setValueAtTime(p.value, t); p.linearRampToValueAtTime(to, t + secs); }
+    function openSession(name) {
+      var g = ctx.createGain(), wet = ctx.createGain(), verb = ctx.createConvolver(), out = ctx.createGain();
+      g.gain.value = 0; wet.gain.value = MOODS[name].wet; verb.buffer = hallBuf;
+      g.connect(out); g.connect(wet); wet.connect(verb); verb.connect(out); out.connect(master);   /* `out` carries dry and echo together */
+      var sess = { g: g, wet: wet, verb: verb, out: out, amb: [] };
+      MOODS[name].amb(sess);
+      return sess;
+    }
+    function closeSession(sess, secs) {
+      var t = ctx.currentTime;
+      ramp(sess.out.gain, 0, t, secs);   /* fades the notes and their echo together, so nothing of the old piece lingers */
+      sess.amb.forEach(function (n) { try { n.stop(t + secs + .05); } catch (e) {} });
+      setTimeout(function () { try { sess.out.disconnect(); sess.g.disconnect(); sess.wet.disconnect(); sess.verb.disconnect(); } catch (e) {} }, (secs + .4) * 1000);
+    }
+    function schedule(until) {
+      if (!session) return;
+      var M = MOODS[mood], s = 60 / M.bpm / 4;
+      while (nextT < until) { M.play(step, nextT, s, session.g); nextT += s; step++; }
+    }
     return {
       moods: MOODS,
       setMood: function (name, accent) {
         if (!MOODS[name]) return;
         var t = ctx.currentTime;
-        if (name !== mood && buses[mood]) ramp(buses[mood].gain, 0, t, 2.2);
-        mood = name; step = 0; nextT = t + .06;
-        var b = busFor(name); ramp(b.gain, MOODS[name].lvl || 1, t, 1.6);
-        if (accent) { taiko(b, t + .02, .9, 2); bell(b, t + .02, MOODS[name].root + 12, .06); }
+        if (session) closeSession(session, .35);
+        mood = name; MOODS[name].st = {}; step = 0; nextT = t + .08;
+        session = openSession(name);
+        ramp(session.g.gain, MOODS[name].lvl || 1, t, accent ? .2 : 1.2);
+        if (accent) { taiko(session.g, t + .03, .85, 2); bell(session.g, t + .05, MOODS[name].root + 12, .055); }
       },
-      start: function () { nextT = Math.max(nextT, ctx.currentTime + .06); ramp(busFor(mood).gain, MOODS[mood].lvl || 1, ctx.currentTime, .3); ramp(master.gain, .62, ctx.currentTime, 1.5); },
+      start: function () { nextT = Math.max(nextT, ctx.currentTime + .06); ramp(master.gain, .62, ctx.currentTime, 1.5); },
       stop: function () { ramp(master.gain, 0, ctx.currentTime, .8); },
       tick: function () { schedule(ctx.currentTime + .2); },
       render: function (secs) { schedule(secs); }   /* for offline rendering */
