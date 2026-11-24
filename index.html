@@ -205,6 +205,29 @@ section.block { padding: 84px 0; background: linear-gradient(rgba(var(--ink-rgb)
 .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; list-style: none; }
 .tags li { font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; padding: 4px 10px; background: rgba(var(--accent-rgb),.09); color: var(--accent-bright); }
 
+.shot {
+  display: block; margin-top: 18px; padding: 0; width: min(100%, 460px); cursor: zoom-in; text-align: left;
+  border: 1px solid var(--line); background: rgba(var(--ink-rgb), .6); overflow: hidden; position: relative;
+  transition: border-color .25s, transform .25s;
+}
+.shot img { display: block; width: 100%; height: auto; aspect-ratio: auto; transition: transform .5s; }
+.shot:hover { border-color: var(--accent); }
+.shot:hover img { transform: scale(1.03); }
+.shot-cap {
+  display: block; padding: 8px 12px; font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); border-top: 1px solid var(--line); background: rgba(var(--panel-rgb), .9);
+}
+.lightbox {
+  position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 24px;
+  background: rgba(var(--ink-rgb), .92); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: zoom-out;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: min(1100px, 100%); max-height: calc(100% - 40px); width: auto; height: auto; border: 1px solid var(--accent); box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.lightbox-close {
+  position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--accent); background: rgba(var(--panel-rgb), .95); color: var(--accent-bright); font-size: 1.3rem; line-height: 1;
+}
+@media (prefers-reduced-motion: reduce) { .shot img { transition: none; } }
 .contact { text-align: left; display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: center; }
 .contact h3 { font-family: var(--display); font-size: clamp(1.7rem, 4vw, 2.6rem); line-height: 1.2; font-weight: 700; text-wrap: balance; }
 .contact p { margin-top: 14px; color: var(--muted); max-width: 46ch; }
@@ -258,6 +281,10 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 </head>
 <body>
 <canvas id="scene" aria-hidden="true"></canvas>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Screenshot">
+  <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Close">&times;</button>
+  <img id="lightbox-img" alt="">
+</div>
 
 <div class="page">
   <header class="nav">
@@ -442,6 +469,10 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
               <div class="meta"><span class="status">Live · v1.2</span><span>Scheduling platform</span></div>
               <p>A calendar-based system for booking driver transportation. Staff request rides, dispatchers and admins approve them with conflict checks, drivers are assigned by availability and update trip status from their own page. Includes reports with CSV export, in-app notifications and an audit log.</p>
               <ul class="tags"><li>SQL Server</li><li>Node.js</li><li>Azure App Service</li><li>Azure SQL</li><li>Responsive UI</li></ul>
+              <button type="button" class="shot" data-full="images/transport-login.jpg" aria-label="View larger: Transport Booking sign-in screen">
+                <img src="images/transport-login.jpg" alt="Transport Booking sign-in screen" width="1000" height="936" loading="lazy">
+                <span class="shot-cap">Sign-in screen · tap to enlarge</span>
+              </button>
             </div>
           </article>
           <article class="proj">
@@ -451,6 +482,10 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
               <div class="meta"><span class="status">Built · 10 modules</span><span>Healthcare operations</span></div>
               <p>A hospital system built module by module on a local SQL Server database, starting at secure login and running through to patient admissions, with a modern web interface on top.</p>
               <ul class="tags"><li>SQL Server</li><li>SSMS</li><li>Web front end</li><li>Role-based access</li></ul>
+              <button type="button" class="shot" data-full="images/his-login.jpg" aria-label="View larger: Hospital Information System sign-in screen">
+                <img src="images/his-login.jpg" alt="Hospital Information System sign-in screen" width="998" height="731" loading="lazy">
+                <span class="shot-cap">Sign-in screen · tap to enlarge</span>
+              </button>
             </div>
           </article>
           <article class="proj">
@@ -460,6 +495,10 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
               <div class="meta"><span class="status wip">In progress</span><span>Map-based parking finder</span></div>
               <p>A web app that shows on a map which designated parking slots are free at malls, condos and restaurants, so a reserved spot stays with the person it belongs to. Sites, zones and slots are managed by admins, with QR codes per slot.</p>
               <ul class="tags"><li>SQL Server</li><li>Node.js</li><li>Maps</li><li>QR codes</li></ul>
+              <button type="button" class="shot" data-full="images/parkspot-login.jpg" aria-label="View larger: ParkSpot sign-in screen with a parking slot map">
+                <img src="images/parkspot-login.jpg" alt="ParkSpot sign-in screen with a parking slot map" width="984" height="934" loading="lazy">
+                <span class="shot-cap">Sign-in screen · tap to enlarge</span>
+              </button>
             </div>
           </article>
           <article class="proj">
@@ -469,6 +508,10 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
               <div class="meta"><span class="status wip">In progress</span><span>Social network for pets</span></div>
               <p>A social network for pets of every kind. Owners create pet profiles with photos and health records, post to a feed, connect with other pets, find pet-friendly places on a map, arrange playdates and message each other.</p>
               <ul class="tags"><li>SQL Server</li><li>Node.js</li><li>Feed and messaging</li><li>Places map</li><li>Mobile-first</li></ul>
+              <button type="button" class="shot" data-full="images/petfriendster-login.jpg" aria-label="View larger: PetFriendster sign-in screen">
+                <img src="images/petfriendster-login.jpg" alt="PetFriendster sign-in screen" width="977" height="936" loading="lazy">
+                <span class="shot-cap">Sign-in screen · tap to enlarge</span>
+              </button>
             </div>
           </article>
           <article class="proj">
@@ -519,6 +562,20 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 </div>
 
 <script>
+/* ---------- screenshot viewer ---------- */
+(function () {
+  var box = document.getElementById('lightbox'), img = document.getElementById('lightbox-img'), closeBtn = document.getElementById('lightbox-close'), opener = null;
+  function open(btn) {
+    opener = btn; var thumb = btn.querySelector('img');
+    img.src = btn.getAttribute('data-full'); img.alt = thumb.alt;
+    box.classList.add('open'); document.body.style.overflow = 'hidden'; closeBtn.focus();
+  }
+  function close() { box.classList.remove('open'); document.body.style.overflow = ''; if (opener) opener.focus(); }
+  document.querySelectorAll('.shot').forEach(function (b) { b.addEventListener('click', function () { open(b); }); });
+  box.addEventListener('click', function (e) { if (e.target !== img) close(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && box.classList.contains('open')) close(); });
+})();
+
 /* ---------- copy email ---------- */
 (function () {
   var btn = document.getElementById('copy');
