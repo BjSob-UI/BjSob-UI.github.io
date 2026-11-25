@@ -11,10 +11,8 @@ try { var a = localStorage.getItem('accent'); if (/^(silver|green|red)$/.test(a)
 <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f3d98a%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b8922a%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%23070605%22/%3E%3Crect%20x%3D%222.5%22%20y%3D%222.5%22%20width%3D%2259%22%20height%3D%2259%22%20rx%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22%23d4af37%22%20stroke-width%3D%222%22/%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%2227%22%20r%3D%2214%22%20fill%3D%22url%28%23g%29%22/%3E%3Cpath%20d%3D%22M4%2052%20L20%2030%20L29%2041%20L37%2033%20L60%2054%20L60%2060%20L4%2060%20Z%22%20fill%3D%22%23070605%22%20stroke%3D%22%23f3d98a%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Shippori+Mincho:wght@700&display=swap" rel="stylesheet">
 <style>
-/* Layout idea: a night landscape (gold sun, ink mountains, falling petals) stays fixed
-   behind a single left-aligned column; a vertical Japanese margin line runs beside the hero. */
 :root {
   color-scheme: dark;
   /* Accent theme tokens. Gold is the default; html[data-accent] swaps the set. */
@@ -22,13 +20,10 @@ try { var a = localStorage.getItem('accent'); if (/^(silver|green|red)$/.test(a)
   --panel-rgb: 18,16,11;     --panel2-rgb: 24,20,12;
   --accent: #d4af37;         --accent-rgb: 212,175,55;
   --accent-bright: #f3d98a;  --bright-rgb: 243,217,138;
-  --accent-deep: #8c6c1f;    --sheen-hi: var(--sheen-hi);   --on-accent: #171204;
+  --accent-deep: #8c6c1f;    --sheen-hi: #fff0b8;   --on-accent: #171204;
   --paper: #ece4cf;
   --muted: #a39a82;
   --line: rgba(var(--accent-rgb), 0.22);
-  --display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
-  --body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
-  --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 html[data-accent="silver"] {
   --ink: #060708;            --ink-rgb: 6,7,8;
@@ -54,233 +49,295 @@ html[data-accent="red"] {
   --accent-deep: #8a2418;    --sheen-hi: #ffd6cb;   --on-accent: #1a0503;
   --paper: #efe4e0;          --muted: #aa938e;
 }
+/* Layout idea: a calm, modern single column. A floating glass nav, a hero split between a bold name and an
+   SQL "profile" card, then rounded panels for about, skills, work and contact over the animated night scene. */
+:root {
+  --display: "Sora", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --jp: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --r-lg: 20px; --r-md: 14px; --r-sm: 10px;
+}
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  background: var(--ink);
-  color: var(--paper);
-  font-family: var(--body);
-  font-size: 17px;
-  line-height: 1.7;
-  overflow-x: hidden;
+  background: var(--ink); color: var(--paper); font-family: var(--body); font-size: 16.5px; line-height: 1.65;
+  overflow-x: hidden; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
 }
 #scene { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100lvh; z-index: 0; display: block; pointer-events: none; }
+.scrim {   /* calms the scene behind the content so text always reads cleanly */
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(110% 75% at 15% 20%, rgba(var(--ink-rgb), .05), rgba(var(--ink-rgb), .5) 70%), linear-gradient(rgba(var(--ink-rgb), 0), rgba(var(--ink-rgb), .35));
+}
 .page { position: relative; z-index: 1; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
 a { color: var(--accent-bright); }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 3px; }
-.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; }
 
-/* ---------- nav ---------- */
-header.nav {
-  position: sticky; top: 0; z-index: 5;
-  background: linear-gradient(rgba(var(--ink-rgb),.92), rgba(var(--ink-rgb),.7));
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--line);
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; text-decoration: none; cursor: pointer;
+  font: inherit; font-family: var(--body); font-weight: 700; font-size: .95rem; letter-spacing: .01em;
+  padding: 13px 22px; border-radius: 12px; border: 1px solid rgba(var(--accent-rgb), .5);
+  color: var(--accent-bright); background: rgba(var(--panel-rgb), .55);
+  transition: transform .2s, box-shadow .25s, background .25s, border-color .25s, filter .25s;
 }
-.nav .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; padding-top: 12px; padding-bottom: 12px; }
-.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--paper); font-family: var(--display); font-weight: 700; font-size: 1.15rem; letter-spacing: .04em; }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn:hover { transform: translateY(-2px); border-color: var(--accent); background: rgba(var(--accent-rgb), .12); }
+.btn.primary {
+  color: var(--on-accent); border-color: transparent;
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
+  box-shadow: 0 10px 30px rgba(var(--accent-rgb), .28);
+}
+.btn.primary:hover {   /* stays solid: brightens and lifts, never fades */
+  color: var(--on-accent); background: linear-gradient(135deg, var(--sheen-hi), var(--accent-bright) 55%, var(--accent));
+  box-shadow: 0 14px 36px rgba(var(--accent-rgb), .4);
+}
+
+/* ---------- floating nav ---------- */
+.nav { position: sticky; top: 12px; z-index: 6; padding: 12px 16px 0; }
+.nav-inner {
+  max-width: 1160px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 8px 8px 8px 12px; border-radius: 999px;
+  background: rgba(var(--panel-rgb), .72); border: 1px solid rgba(var(--accent-rgb), .18);
+  backdrop-filter: blur(14px) saturate(130%); -webkit-backdrop-filter: blur(14px) saturate(130%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+}
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--paper); font-family: var(--display); font-weight: 600; font-size: .98rem; letter-spacing: -.01em; white-space: nowrap; }
 .seal {
-  width: 34px; height: 34px; display: grid; place-items: center;
-  border: 1.5px solid var(--accent); border-radius: 4px;
-  color: var(--accent-bright); font-family: var(--display); font-weight: 800; font-size: 1.1rem; line-height: 1;
-  background: rgba(var(--accent-rgb),.08);
+  width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px;
+  font-family: var(--jp); font-weight: 700; font-size: 1.05rem; color: var(--on-accent);
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent));
 }
-.nav nav { display: flex; flex-wrap: wrap; gap: 4px 22px; }
+.nav nav { display: flex; gap: 2px; }
 .nav nav a {
-  color: var(--muted); text-decoration: none; font-family: var(--mono); font-size: .78rem;
-  letter-spacing: .14em; text-transform: uppercase; padding: 6px 0; border-bottom: 1px solid transparent;
-  transition: color .2s, border-color .2s;
+  color: var(--muted); text-decoration: none; font-weight: 600; font-size: .9rem; padding: 8px 14px; border-radius: 999px;
+  transition: color .2s, background .2s;
 }
-.themes { display: flex; align-items: center; gap: 10px; }
+.nav nav a:hover { color: var(--paper); background: rgba(var(--accent-rgb), .08); }
+.nav nav a.active { color: var(--accent-bright); background: rgba(var(--accent-rgb), .14); }
+
+/* theme + music buttons and their tooltips */
+.themes { display: flex; align-items: center; gap: 6px; }
 .tool { position: relative; display: flex; }
 .theme-btn {
-  width: 36px; height: 36px; display: grid; place-items: center; padding: 0; cursor: pointer;
-  border: 1px solid var(--line); border-radius: 50%; background: rgba(var(--accent-rgb), .06); color: var(--accent);
-  transition: border-color .2s, background .2s, transform .2s;
+  width: 38px; height: 38px; display: grid; place-items: center; padding: 0; cursor: pointer; border-radius: 50%;
+  border: 1px solid rgba(var(--accent-rgb), .25); background: rgba(var(--accent-rgb), .08); color: var(--accent);
+  transition: border-color .2s, background .2s;
 }
-.theme-btn:hover { border-color: var(--accent); background: rgba(var(--accent-rgb), .14); }
-.theme-btn svg { width: 24px; height: 24px; overflow: visible; }
+.theme-btn:hover { border-color: var(--accent); background: rgba(var(--accent-rgb), .16); }
+.theme-btn svg { width: 22px; height: 22px; overflow: visible; }
 .theme-btn .orbit { transform-origin: 12px 12px; transition: transform .6s cubic-bezier(.3,1.4,.5,1); }
-.theme-tip {
-  position: absolute; top: calc(100% + 10px); right: 0; z-index: 6; white-space: nowrap;
-  font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
-  padding: 7px 11px; color: var(--paper); background: rgba(var(--panel-rgb), .97); border: 1px solid var(--accent);
-  opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .2s, transform .2s;
-}
-.theme-tip::before { content: ""; position: absolute; top: -5px; right: 13px; width: 8px; height: 8px; background: inherit; border-left: 1px solid var(--accent); border-top: 1px solid var(--accent); transform: rotate(45deg); }
-.theme-tip b { color: var(--accent-bright); font-weight: 500; }
-/* Theme change: the new colors spread out from the button like ink in water. */
-::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
-::view-transition-old(root) { z-index: 1; }
-::view-transition-new(root) { z-index: 2; }
-.theme-wave {
-  position: fixed; z-index: 50; pointer-events: none; border-radius: 50%;
-  border: 2px solid var(--accent-bright);
-  box-shadow: 0 0 24px 4px rgba(var(--bright-rgb), .55), inset 0 0 60px 6px rgba(var(--accent-rgb), .35);
-}
-.theme-wave.echo { border-width: 1px; box-shadow: 0 0 12px 1px rgba(var(--accent-rgb), .4); }
-.tool:hover > .theme-tip, .theme-btn:focus-visible + .theme-tip, .theme-tip.show { opacity: 1; transform: none; }
-.music-btn .waves-on { transition: opacity .25s; }
+.music-btn .waves-on, .music-btn .mute-x { transition: opacity .25s; }
 .music-btn[aria-pressed="false"] .waves-on { opacity: 0; }
 .music-btn[aria-pressed="true"] .mute-x { opacity: 0; }
-.music-btn .mute-x { transition: opacity .25s; }
 .music-btn[aria-pressed="true"] { border-color: var(--accent); }
 .music-btn[aria-pressed="true"] .waves-on path { animation: pulse 1.6s ease-in-out infinite; }
 .music-btn[aria-pressed="true"] .waves-on path + path { animation-delay: .3s; }
 @keyframes pulse { 50% { opacity: .35; } }
-@media (prefers-reduced-motion: reduce) { .music-btn .waves-on path { animation: none !important; } }
-.nav nav a:hover { color: var(--accent-bright); border-color: var(--accent); }
+.theme-tip {
+  position: absolute; top: calc(100% + 12px); right: 0; z-index: 7; white-space: nowrap;
+  font-family: var(--mono); font-size: .7rem; letter-spacing: .04em;
+  padding: 7px 11px; border-radius: 8px; color: var(--paper); background: rgba(var(--panel-rgb), .97); border: 1px solid rgba(var(--accent-rgb), .5);
+  opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .2s, transform .2s;
+}
+.theme-tip b { color: var(--accent-bright); font-weight: 500; }
+.tool:hover > .theme-tip, .theme-btn:focus-visible + .theme-tip, .theme-tip.show { opacity: 1; transform: none; }
 
 /* ---------- hero ---------- */
-.hero { padding: 96px 0 150px; }
-.hero .wrap { display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: start; }
-.eyebrow { font-family: var(--mono); font-size: .8rem; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); }
-h1 {
-  font-family: var(--display); font-weight: 800; line-height: 1.08; letter-spacing: -.01em;
-  font-size: clamp(2.6rem, 7.2vw, 5.4rem); margin: 22px 0 26px; text-wrap: balance; max-width: 13ch;
+.hero { padding: 76px 0 56px; }
+.hero-grid { display: grid; grid-template-columns: 1.12fr .88fr; gap: 56px; align-items: center; }
+.loc {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 10px; border-radius: 999px;
+  font-size: .82rem; font-weight: 600; color: var(--paper); background: rgba(var(--panel-rgb), .7); border: 1px solid rgba(var(--accent-rgb), .2);
 }
-h1 .gilt {
-  background: linear-gradient(100deg, var(--accent-deep) 0%, var(--accent) 28%, var(--accent-bright) 50%, var(--accent) 72%, var(--accent-deep) 100%);
-  background-size: 220% 100%;
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+.loc i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(var(--accent-rgb), .18); }
+.hero-name { margin: 22px 0 18px; font-weight: 800; font-size: clamp(2.7rem, 6.2vw, 5rem); line-height: 1.02; letter-spacing: -.035em; }
+.hero-name .grad {
+  display: block; background: linear-gradient(100deg, var(--accent-bright), var(--accent) 45%, var(--accent-bright) 75%, var(--accent));
+  background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: sheen 9s ease-in-out infinite;
 }
 @keyframes sheen { 0%, 100% { background-position: 0% 0; } 50% { background-position: 100% 0; } }
-.lede { max-width: 54ch; font-size: 1.12rem; color: var(--paper); text-shadow: 0 1px 12px rgba(0,0,0,.8); }
-.cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 36px; }
-.btn {
-  display: inline-block; text-decoration: none; font-family: var(--mono); font-size: .82rem; letter-spacing: .12em; text-transform: uppercase;
-  padding: 14px 26px; border: 1px solid var(--accent); color: var(--accent-bright); background: rgba(var(--ink-rgb),.55);
-  transition: background .25s, color .25s, transform .25s;
+.roles { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin-bottom: 22px; }
+.roles li { font-size: .82rem; font-weight: 600; padding: 6px 12px; border-radius: 999px; color: var(--accent-bright); background: rgba(var(--accent-rgb), .1); border: 1px solid rgba(var(--accent-rgb), .22); }
+.lede { max-width: 56ch; font-size: 1.1rem; color: var(--paper); opacity: .9; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+
+/* SQL profile card */
+.query {
+  border-radius: var(--r-lg); overflow: hidden; background: rgba(var(--panel-rgb), .88); border: 1px solid rgba(var(--accent-rgb), .22);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .02) inset; font-family: var(--mono); font-size: .84rem;
 }
-.btn:hover { background: rgba(var(--accent-rgb),.14); transform: translateY(-2px); }
-.btn.solid { background: linear-gradient(135deg, var(--accent-bright), var(--accent) 55%, var(--accent-deep)); color: var(--on-accent); font-weight: 500; border-color: transparent; }
-.btn.solid:hover { background: linear-gradient(135deg, var(--sheen-hi), var(--accent-bright) 55%, var(--accent)); }
-.tate {
-  writing-mode: vertical-rl; font-family: var(--display); font-weight: 500;
-  font-size: 1.25rem; letter-spacing: .5em; color: var(--accent);
-  border-left: 1px solid var(--line); padding-left: 18px; margin-top: 8px; white-space: nowrap;
-}
-.tate small { color: var(--muted); font-size: .8rem; letter-spacing: .35em; margin-top: 1.2em; }
+.q-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid rgba(var(--accent-rgb), .14); color: var(--muted); font-size: .76rem; }
+.q-bar i { width: 10px; height: 10px; border-radius: 50%; background: rgba(var(--accent-rgb), .35); }
+.q-bar i:first-child { background: var(--accent); }
+.q-bar span { margin-left: 8px; }
+.q-code { padding: 18px 20px 6px; line-height: 1.75; white-space: pre; overflow-x: auto; color: var(--paper); }
+.q-code .k { color: var(--accent-bright); font-weight: 500; }
+.q-code .s { color: var(--paper); opacity: .85; }
+.q-code .c { color: var(--muted); }
+.q-res { margin: 10px 16px 16px; border-radius: var(--r-sm); border: 1px solid rgba(var(--accent-rgb), .14); overflow: hidden; }
+.q-res div { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 9px 14px; }
+.q-res div + div { border-top: 1px solid rgba(var(--accent-rgb), .1); }
+.q-res dt { color: var(--accent); }
+.q-res dd { color: var(--paper); font-family: var(--body); font-weight: 600; font-size: .9rem; }
+.q-foot { padding: 0 20px 16px; color: var(--muted); font-size: .74rem; }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 56px; list-style: none; }
+.stats li { padding: 18px 20px; border-radius: var(--r-md); background: rgba(var(--panel-rgb), .7); border: 1px solid rgba(var(--accent-rgb), .14); }
+.stats b { display: block; font-family: var(--display); font-weight: 700; font-size: 1.85rem; line-height: 1.1; letter-spacing: -.02em; color: var(--accent-bright); font-variant-numeric: tabular-nums; }
+.stats span { font-size: .86rem; color: var(--muted); font-weight: 500; }
 
 /* ---------- sections ---------- */
-section.block { padding: 84px 0; background: linear-gradient(rgba(var(--ink-rgb),0), rgba(var(--ink-rgb),.76) 90px, rgba(var(--ink-rgb),.76) calc(100% - 90px), rgba(var(--ink-rgb),0)); }
-.head { display: flex; align-items: baseline; gap: 18px; margin-bottom: 40px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
-.head .kanji { font-family: var(--display); font-size: 2.2rem; font-weight: 700; color: var(--accent); line-height: 1; }
-.head h2 { font-family: var(--display); font-weight: 700; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: .01em; }
-.head .jp { margin-left: auto; font-family: var(--display); color: var(--muted); letter-spacing: .3em; font-size: .95rem; }
+section.block { padding: 92px 0; scroll-margin-top: 70px; }
+.sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 36px; }
+.eyebrow { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+.eyebrow::before { content: ""; width: 22px; height: 1px; background: var(--accent); }
+.sec-head h2 { font-size: clamp(1.9rem, 3.6vw, 2.6rem); font-weight: 700; letter-spacing: -.025em; line-height: 1.15; }
+.sec-head .kj { font-family: var(--jp); font-size: 2.4rem; font-weight: 700; line-height: 1; color: transparent; -webkit-text-stroke: 1px rgba(var(--accent-rgb), .55); }
+.panel { border-radius: var(--r-lg); background: rgba(var(--panel-rgb), .78); border: 1px solid rgba(var(--accent-rgb), .14); }
 
-.about { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; }
-.about p { max-width: 62ch; }
-.about p + p { margin-top: 1.1em; }
-.facts { list-style: none; display: grid; gap: 0; align-content: start; border-top: 1px solid var(--line); }
-.facts li { display: grid; grid-template-columns: 7.5em 1fr; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: .95rem; }
-.facts span { font-family: var(--mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); padding-top: 4px; }
+/* about */
+.about-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 28px; align-items: start; }
+.about-text { padding: 30px 32px; }
+.about-text p { font-size: 1.04rem; max-width: 64ch; }
+.about-text p + p { margin-top: 1em; }
+.about-text p:first-child { font-family: var(--display); font-size: 1.28rem; font-weight: 500; line-height: 1.5; letter-spacing: -.01em; }
+.facts { list-style: none; padding: 10px 26px; }
+.facts li { display: grid; grid-template-columns: 6.2em 1fr; gap: 14px; padding: 14px 0; font-size: .96rem; font-weight: 500; }
+.facts li + li { border-top: 1px solid rgba(var(--accent-rgb), .12); }
+.facts span { font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); padding-top: 3px; }
 
-.skills { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; border: 1px solid var(--line); }
-.skills > div { padding: 28px 26px; background: rgba(var(--panel-rgb),.72); }
-.skills > div:nth-child(even) { border-left: 1px solid var(--line); }
-.skills > div:nth-child(n+3) { border-top: 1px solid var(--line); }
-.skills h3 { font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--accent-bright); margin-bottom: 4px; }
-.skills .sub { font-family: var(--mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
-.skills ul { list-style: none; }
-.skills li { padding: 7px 0 7px 20px; position: relative; font-size: .97rem; }
-.skills li::before { content: ""; position: absolute; left: 0; top: 1.05em; width: 9px; height: 1px; background: var(--accent); }
-
-.work { display: grid; gap: 22px; }
-.proj {
-  display: grid; grid-template-columns: 5.5rem 1fr; gap: 0 28px;
-  padding: 30px 30px 28px; background: rgba(var(--panel-rgb),.78); border: 1px solid var(--line);
-  position: relative; transition: border-color .3s, transform .3s, background .3s;
+/* skills */
+.skills { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+.skill { padding: 26px 28px; transition: border-color .3s, transform .3s; }
+.skill:hover { border-color: rgba(var(--accent-rgb), .4); transform: translateY(-3px); }
+.skill-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.ico { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 12px; color: var(--accent-bright); background: rgba(var(--accent-rgb), .12); border: 1px solid rgba(var(--accent-rgb), .22); }
+.ico svg { width: 22px; height: 22px; }
+.skill h3 { font-size: 1.15rem; font-weight: 700; letter-spacing: -.01em; }
+.skill .sub { font-size: .85rem; color: var(--muted); }
+.skill ul { list-style: none; display: grid; gap: 9px; }
+.skill li { position: relative; padding-left: 26px; font-size: .95rem; }
+.skill li::before {
+  content: ""; position: absolute; left: 0; top: .42em; width: 14px; height: 14px; border-radius: 50%;
+  background: rgba(var(--accent-rgb), .15) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.2l2.6 2.6L12 5.4' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px no-repeat;
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), .45);
 }
-.proj::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(var(--accent-bright), var(--accent-deep)); transform: scaleY(0); transform-origin: top; transition: transform .35s; }
-.proj:hover { border-color: rgba(var(--accent-rgb),.55); transform: translateX(4px); background: rgba(var(--panel2-rgb),.86); }
-.proj:hover::before { transform: scaleY(1); }
-.proj .no { font-family: var(--display); font-size: 3rem; font-weight: 800; line-height: 1; color: transparent; -webkit-text-stroke: 1px var(--accent); }
-.proj h3 { font-family: var(--display); font-size: 1.5rem; font-weight: 700; line-height: 1.25; }
-.proj .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 6px 0 12px; font-family: var(--mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-.status { padding: 2px 10px; border: 1px solid var(--accent); color: var(--accent-bright); border-radius: 99px; }
-.status.wip { border-color: var(--muted); color: var(--muted); border-style: dashed; }
-.proj p { max-width: 66ch; color: var(--paper); }
-.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; list-style: none; }
-.tags li { font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; padding: 4px 10px; background: rgba(var(--accent-rgb),.09); color: var(--accent-bright); }
 
-.shot {
-  display: block; margin-top: 18px; padding: 0; width: min(100%, 460px); cursor: zoom-in; text-align: left;
-  border: 1px solid var(--line); background: rgba(var(--ink-rgb), .6); overflow: hidden; position: relative;
-  transition: border-color .25s, transform .25s;
+/* ---------- project showcase ---------- */
+.filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; margin-bottom: 30px; width: fit-content; max-width: 100%; border-radius: 999px; background: rgba(var(--panel-rgb), .72); border: 1px solid rgba(var(--accent-rgb), .14); }
+.filter {
+  font: inherit; font-weight: 600; font-size: .88rem; cursor: pointer; padding: 8px 16px; border-radius: 999px; border: 0;
+  background: transparent; color: var(--muted); transition: color .2s, background .2s;
 }
-.shot img { display: block; width: 100%; height: auto; aspect-ratio: auto; transition: transform .5s; }
-.shot:hover { border-color: var(--accent); }
-.shot:hover img { transform: scale(1.03); }
+.filter span { margin-left: 6px; font-family: var(--mono); font-size: .74rem; color: var(--accent); }
+.filter:hover { color: var(--paper); }
+.filter[aria-pressed="true"] { background: linear-gradient(135deg, var(--accent-bright), var(--accent)); color: var(--on-accent); }
+.filter[aria-pressed="true"] span { color: var(--on-accent); opacity: .7; }
+.group-label { font-family: var(--mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 16px; display: flex; align-items: center; gap: 12px; }
+.group-label::after { content: ""; flex: 1; height: 1px; background: rgba(var(--accent-rgb), .14); }
+.group-label[hidden], .no-match[hidden] { display: none; }
+.grid-feat { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-bottom: 48px; }
+.grid-more { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.grid-feat[hidden], .grid-more[hidden] { display: none; }
+.pcard {
+  position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: var(--r-lg);
+  background: rgba(var(--panel-rgb), .82); border: 1px solid rgba(var(--accent-rgb), .14);
+  transition: border-color .3s, transform .3s, box-shadow .3s;
+}
+.pcard:hover { border-color: rgba(var(--accent-rgb), .45); transform: translateY(-5px); box-shadow: 0 24px 50px rgba(0, 0, 0, .45); }
+.pcard[hidden] { display: none; }
+.card-body { padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pcard .no { font-family: var(--mono); font-size: .78rem; color: var(--muted); }
+.pcard .meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 10px; font-size: .78rem; font-weight: 600; color: var(--muted); text-align: right; }
+.status { padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; color: var(--accent-bright); background: rgba(var(--accent-rgb), .12); border: 1px solid rgba(var(--accent-rgb), .3); }
+.status.wip { color: var(--muted); background: transparent; border-style: dashed; border-color: rgba(var(--accent-rgb), .3); }
+.pcard h3 { font-size: 1.18rem; font-weight: 700; line-height: 1.3; letter-spacing: -.01em; }
+.pcard.feat h3 { font-size: 1.42rem; }
+.pcard p { font-size: .95rem; opacity: .9; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin-top: auto; padding-top: 8px; }
+.tags li { font-family: var(--mono); font-size: .7rem; padding: 4px 9px; border-radius: 6px; color: var(--accent-bright); background: rgba(var(--accent-rgb), .1); }
+.no-match { color: var(--muted); font-style: italic; }
+.shot { display: block; position: relative; padding: 0; margin: 0; width: 100%; cursor: zoom-in; border: 0; border-bottom: 1px solid rgba(var(--accent-rgb), .14); background: var(--ink); overflow: hidden; text-align: left; font: inherit; }
+.shot img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; transition: transform .6s; }
+.shot:hover img { transform: scale(1.035); }
 .shot-cap {
-  display: block; padding: 8px 12px; font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--muted); border-top: 1px solid var(--line); background: rgba(var(--panel-rgb), .9);
+  position: absolute; left: 12px; bottom: 12px; padding: 5px 10px; border-radius: 999px; font-size: .74rem; font-weight: 600;
+  color: var(--paper); background: rgba(var(--ink-rgb), .75); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border: 1px solid rgba(255, 255, 255, .08);
 }
-.lightbox {
-  position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 24px;
-  background: rgba(var(--ink-rgb), .92); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: zoom-out;
-}
+
+/* ---------- contact ---------- */
+.contact-panel { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; padding: 44px; position: relative; overflow: hidden; }
+.contact-panel::before { content: ""; position: absolute; right: -120px; top: -120px; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(rgba(var(--accent-rgb), .22), transparent 70%); pointer-events: none; }
+.contact-panel h3 { font-size: clamp(1.6rem, 3.2vw, 2.2rem); font-weight: 700; letter-spacing: -.025em; line-height: 1.2; }
+.contact-panel p { margin-top: 12px; color: var(--muted); max-width: 44ch; }
+.contact-panel .cta { margin-top: 24px; }
+.details { list-style: none; display: grid; gap: 12px; position: relative; }
+.details li { display: grid; gap: 2px; padding: 14px 18px; border-radius: var(--r-md); background: rgba(var(--ink-rgb), .45); border: 1px solid rgba(var(--accent-rgb), .12); }
+.details span { font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.details b, .details a { font-weight: 600; color: var(--paper); overflow-wrap: anywhere; text-decoration: none; }
+.details a:hover { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+
+footer { padding: 34px 0 44px; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; font-size: .85rem; color: var(--muted); border-top: 1px solid rgba(var(--accent-rgb), .12); padding-top: 24px; }
+footer .jp { font-family: var(--jp); }
+
+/* ---------- overlays and motion ---------- */
+.lightbox { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(var(--ink-rgb), .92); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: zoom-out; }
 .lightbox.open { display: flex; }
-.lightbox img { max-width: min(1100px, 100%); max-height: calc(100% - 40px); width: auto; height: auto; border: 1px solid var(--accent); box-shadow: 0 20px 60px rgba(0,0,0,.6); }
-.lightbox-close {
-  position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-  border: 1px solid var(--accent); background: rgba(var(--panel-rgb), .95); color: var(--accent-bright); font-size: 1.3rem; line-height: 1;
-}
-@media (prefers-reduced-motion: reduce) { .shot img { transition: none; } }
-.contact { text-align: left; display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: center; }
-.contact h3 { font-family: var(--display); font-size: clamp(1.7rem, 4vw, 2.6rem); line-height: 1.2; font-weight: 700; text-wrap: balance; }
-.contact p { margin-top: 14px; color: var(--muted); max-width: 46ch; }
-.card { border: 1px solid var(--accent); padding: 28px; background: rgba(var(--panel-rgb),.85); display: grid; gap: 16px; }
-.card .row { display: grid; gap: 2px; }
-.card .row span { font-family: var(--mono); font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
-.card .row b { font-weight: 500; font-size: 1.05rem; overflow-wrap: anywhere; }
-.card .row a { color: var(--paper); text-decoration-color: var(--accent); text-underline-offset: 4px; }
-.card .row a:hover { color: var(--accent-bright); }
-.card button {
-  font: inherit; font-family: var(--mono); font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; cursor: pointer;
-  padding: 12px 18px; border: 1px solid var(--accent); background: transparent; color: var(--accent-bright); transition: background .2s;
-}
-.card button:hover { background: rgba(var(--accent-rgb),.14); }
+.lightbox img { max-width: min(1100px, 100%); max-height: calc(100% - 40px); width: auto; height: auto; border-radius: var(--r-md); border: 1px solid rgba(var(--accent-rgb), .5); box-shadow: 0 20px 60px rgba(0, 0, 0, .6); }
+.lightbox-close { position: absolute; top: 16px; right: 16px; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(var(--accent-rgb), .5); background: rgba(var(--panel-rgb), .95); color: var(--accent-bright); font-size: 1.3rem; line-height: 1; }
+.progress { position: fixed; left: 0; top: 0; z-index: 9; height: 2px; width: 100%; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, var(--accent-deep), var(--accent-bright)); pointer-events: none; }
+.to-top { position: fixed; right: 18px; bottom: 18px; z-index: 8; width: 46px; height: 46px; border-radius: 14px; cursor: pointer; display: grid; place-items: center; border: 1px solid rgba(var(--accent-rgb), .4); background: rgba(var(--panel-rgb), .9); color: var(--accent-bright); opacity: 0; transform: translateY(12px); pointer-events: none; transition: opacity .3s, transform .3s, background .2s; }
+.to-top.show { opacity: 1; transform: none; pointer-events: auto; }
+.to-top:hover { background: rgba(var(--accent-rgb), .18); }
+.to-top svg { width: 18px; height: 18px; }
+.theme-wave { position: fixed; z-index: 50; pointer-events: none; border-radius: 50%; border: 2px solid var(--accent-bright); box-shadow: 0 0 24px 4px rgba(var(--bright-rgb), .55), inset 0 0 60px 6px rgba(var(--accent-rgb), .35); }
+.theme-wave.echo { border-width: 1px; box-shadow: 0 0 12px 1px rgba(var(--accent-rgb), .4); }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 2; }
+.reveal { transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
+.reveal.pre { opacity: .2; transform: translateY(26px); }
 
-/* seigaiha (wave) band */
-.waves {
-  height: 46px; opacity: .5;
-  background-image:
-    radial-gradient(circle at 50% 100%, transparent 6px, var(--accent-deep) 6px, var(--accent-deep) 7px, transparent 7px, transparent 12px, var(--accent-deep) 12px, var(--accent-deep) 13px, transparent 13px, transparent 18px, var(--accent-deep) 18px, var(--accent-deep) 19px, transparent 19px),
-    radial-gradient(circle at 0% 50%, transparent 6px, var(--accent-deep) 6px, var(--accent-deep) 7px, transparent 7px, transparent 12px, var(--accent-deep) 12px, var(--accent-deep) 13px, transparent 13px, transparent 18px, var(--accent-deep) 18px, var(--accent-deep) 19px, transparent 19px),
-    radial-gradient(circle at 100% 50%, transparent 6px, var(--accent-deep) 6px, var(--accent-deep) 7px, transparent 7px, transparent 12px, var(--accent-deep) 12px, var(--accent-deep) 13px, transparent 13px, transparent 18px, var(--accent-deep) 18px, var(--accent-deep) 19px, transparent 19px);
-  background-size: 40px 23px;
-  animation: tide 14s linear infinite;
+/* ---------- responsive ---------- */
+@media (max-width: 1020px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .query { max-width: 560px; }
+  .grid-more { grid-template-columns: repeat(2, 1fr); }
 }
-@keyframes tide { to { background-position: 40px 0, 40px 0, 40px 0; } }
-footer { background: rgba(var(--ink-rgb),.92); }
-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding-top: 22px; padding-bottom: 30px; font-family: var(--mono); font-size: .75rem; letter-spacing: .1em; color: var(--muted); }
-
-@media (max-width: 820px) {
-  .hero { padding: 64px 0 120px; }
-  .hero .wrap { grid-template-columns: 1fr; }
-  .tate { display: none; }
-  .about, .contact { grid-template-columns: 1fr; gap: 32px; }
-  .skills { grid-template-columns: 1fr; }
-  .skills > div:nth-child(even) { border-left: 0; }
-  .skills > div + div { border-top: 1px solid var(--line); }
-  .proj { grid-template-columns: 1fr; padding: 24px 20px; }
-  .proj .no { font-size: 2.2rem; margin-bottom: 8px; }
-  .head .jp { display: none; }
-  .nav .wrap { row-gap: 6px; }
-  .themes { order: 1; margin-left: auto; }
-  .nav nav { order: 2; width: 100%; }
+@media (max-width: 760px) {
+  .nav { top: 8px; padding: 8px 10px 0; }
+  .nav-inner { flex-wrap: wrap; border-radius: 22px; padding: 10px 10px 8px 12px; row-gap: 6px; }
+  .nav nav { order: 3; width: 100%; justify-content: space-between; overflow-x: auto; }
+  .nav nav a { padding: 7px 11px; font-size: .86rem; }
+  .hero { padding: 48px 0 30px; }
+  .stats { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 36px; }
+  section.block { padding: 64px 0; }
+  .sec-head .kj { display: none; }
+  .about-grid, .skills, .grid-feat, .grid-more, .contact-panel { grid-template-columns: 1fr; }
+  .about-text { padding: 24px; }
+  .contact-panel { padding: 28px 22px; gap: 26px; }
+  .filters { border-radius: 18px; }
+  .q-code { font-size: .78rem; white-space: pre-wrap; word-break: break-word; }
 }
+@media (max-width: 400px) { .brand .name { display: none; } }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  h1 .gilt, .waves { animation: none; }
-  .btn, .proj { transition: none; }
+  .reveal, .reveal.pre { transition: none; opacity: 1; transform: none; }
+  .hero-name .grad, .music-btn .waves-on path { animation: none !important; }
+  .btn, .pcard, .skill, .shot img, .to-top { transition: none; }
 }
 </style>
 </head>
 <body>
 <canvas id="scene" aria-hidden="true"></canvas>
+<div class="scrim" aria-hidden="true"></div>
+<div class="progress" id="progress" aria-hidden="true"></div>
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Screenshot">
   <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Close">&times;</button>
   <img id="lightbox-img" alt="">
@@ -288,8 +345,8 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 
 <div class="page">
   <header class="nav">
-    <div class="wrap">
-      <a class="brand" href="#top"><span class="seal" aria-hidden="true">匠</span>Benedict John Soberano</a>
+    <div class="nav-inner">
+      <a class="brand" href="#top"><span class="seal" aria-hidden="true">匠</span><span class="name">Benedict John Soberano</span></a>
       <nav aria-label="Sections">
         <a href="#about">About</a>
         <a href="#skills">Skills</a>
@@ -327,27 +384,51 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   <main id="top">
     <section class="hero">
       <div class="wrap">
-        <div>
-          <h1>Data systems built with a <span class="gilt">craftsman's</span> patience.</h1>
-          <p class="lede">I'm Benedict John Soberano. I'm a data analyst and developer. I design SQL Server databases, build standalone desktop apps in C# WinForms, and build full web applications, from the first table to the deployed site.</p>
-          <div class="cta">
-            <a class="btn solid" href="#work">See my work</a>
-            <a class="btn" href="#contact">Get in touch</a>
+        <div class="hero-grid">
+          <div>
+            <span class="loc"><i aria-hidden="true"></i>Based in Oton, Iloilo, Philippines</span>
+            <h1 class="hero-name">Benedict John <span class="grad">Soberano</span></h1>
+            <ul class="roles" aria-label="Roles">
+              <li>Data Analyst</li><li>SQL Server Developer &amp; DBA</li><li>C# WinForms</li><li>Web Apps</li>
+            </ul>
+            <p class="lede">I design SQL Server databases, build standalone desktop apps in C# WinForms, and build full web applications, from the first table to the deployed site.</p>
+            <div class="cta">
+              <a class="btn primary" href="#work">See my work <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+              <a class="btn" href="#contact">Get in touch</a>
+            </div>
           </div>
+          <figure class="query" aria-label="Profile summary">
+            <div class="q-bar" aria-hidden="true"><i></i><i></i><i></i><span>profile.sql</span></div>
+<pre class="q-code" aria-hidden="true"><span class="c">-- data systems built with a craftsman's patience</span>
+<span class="k">SELECT</span> name, role, focus
+<span class="k">FROM</span>   developers
+<span class="k">WHERE</span>  name = <span class="s">'Benedict John Soberano'</span>;</pre>
+            <dl class="q-res">
+              <div><dt>name</dt><dd>Benedict John Soberano</dd></div>
+              <div><dt>role</dt><dd>Data Analyst · DBA · Developer</dd></div>
+              <div><dt>focus</dt><dd>SQL Server, C#, web apps</dd></div>
+            </dl>
+            <figcaption class="q-foot">(1 row affected)</figcaption>
+          </figure>
         </div>
-        <p class="tate" aria-hidden="true">データベース職人<small>database craftsman</small></p>
+        <ul class="stats">
+          <li><b>11</b><span>projects shown here</span></li>
+          <li><b>6</b><span>desktop apps in C# and Java</span></li>
+          <li><b>4</b><span>web apps built from the database up</span></li>
+          <li><b>Live</b><span>on Azure: Transport Booking</span></li>
+        </ul>
       </div>
     </section>
 
     <section class="block" id="about">
       <div class="wrap">
-        <div class="head"><span class="kanji" aria-hidden="true">一</span><h2>About</h2><span class="jp" aria-hidden="true">経歴</span></div>
-        <div class="about">
-          <div>
+        <div class="sec-head"><div><p class="eyebrow">01 · About</p><h2>The database comes first</h2></div><span class="kj" aria-hidden="true">経歴</span></div>
+        <div class="about-grid">
+          <div class="about-text panel">
             <p>I work mostly in the database. I design schemas, write T-SQL and stored procedures, and build queries whose results have to hold up when someone checks them. That habit shapes how I write everything else.</p>
             <p>I've built standalone desktop applications, including a point-of-sale system for a restobar and an endoscopy management system that prints patient imaging results. I also have hospital software experience with BizBox Inc., across hospital information, materials management, PhilHealth and financial management systems. Alongside that I build web systems of my own, each one starting with the schema and growing one working step at a time.</p>
           </div>
-          <ul class="facts">
+          <ul class="facts panel">
             <li><span>Roles</span>Data Analyst, C# WinForms developer, SQL Server database administrator</li>
             <li><span>Focus</span>T-SQL, stored procedures, database design</li>
             <li><span>Stack</span>SQL Server, C#, Node.js, Azure</li>
@@ -360,208 +441,238 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 
     <section class="block" id="skills">
       <div class="wrap">
-        <div class="head"><span class="kanji" aria-hidden="true">二</span><h2>Skills</h2><span class="jp" aria-hidden="true">技術</span></div>
+        <div class="sec-head"><div><p class="eyebrow">02 · Skills</p><h2>What I work with</h2></div><span class="kj" aria-hidden="true">技術</span></div>
         <div class="skills">
-          <div>
-            <h3>Database</h3>
-            <p class="sub">Where I spend most days</p>
-            <ul>
-              <li>T-SQL and stored procedure design</li>
-              <li>SQL Server and SSMS</li>
-              <li>Data analysis and reporting</li>
-              <li>Schema design for new applications</li>
-              <li>Azure SQL</li>
-            </ul>
-          </div>
-          <div>
-            <h3>Administration</h3>
-            <p class="sub">Keeping systems running</p>
-            <ul>
-              <li>SQL Server database administration in SSMS</li>
-              <li>Database creation, user creation, roles and SQL permissions</li>
-              <li>Storage management, including shrinking MDF and LDF files</li>
-              <li>Azure Active Directory: adding, editing and removing users and groups</li>
-              <li>Folder access permissions</li>
-            </ul>
-          </div>
-          <div>
-            <h3>Applications</h3>
-            <p class="sub">Front to back</p>
-            <ul>
-              <li>C# WinForms desktop applications, designed with Telerik UI and Guna UI</li>
-              <li>Web front ends: HTML, CSS, JavaScript</li>
-              <li>Node.js back ends</li>
-              <li>Python scripting</li>
-              <li>Java, with NetBeans</li>
-              <li>Microsoft Access and VBA</li>
-              <li>Role-based login and admin tools</li>
-              <li>Responsive layouts, light and dark themes</li>
-            </ul>
-          </div>
-          <div>
-            <h3>Delivery</h3>
-            <p class="sub">Getting it shipped</p>
-            <ul>
-              <li>Azure App Service deployment</li>
-              <li>Azure DevOps</li>
-              <li>Step-by-step, versioned releases</li>
-              <li>Setup guides and walkthroughs</li>
-              <li>AI-assisted development with Claude, Gemini and ChatGPT</li>
-            </ul>
-          </div>
+          <article class="skill panel">
+            <div class="skill-top"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v6.5c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8V5.5"/><path d="M4.5 12v6.5c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8V12"/></svg></span><div><h3>Database</h3><p class="sub">Where I spend most days</p></div></div>
+            <ul><li>T-SQL and stored procedure design</li><li>SQL Server and SSMS</li><li>Data analysis and reporting</li><li>Schema design for new applications</li><li>Azure SQL</li></ul>
+          </article>
+          <article class="skill panel">
+            <div class="skill-top"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg></span><div><h3>Administration</h3><p class="sub">Keeping systems running</p></div></div>
+            <ul><li>SQL Server database administration in SSMS</li><li>Database creation, user creation, roles and SQL permissions</li><li>Storage management, including shrinking MDF and LDF files</li><li>Azure Active Directory: adding, editing and removing users and groups</li><li>Folder access permissions</li></ul>
+          </article>
+          <article class="skill panel">
+            <div class="skill-top"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="15" rx="2.5"/><path d="M3 8.5h18M9 13l-2 1.8L9 16.6M15 13l2 1.8-2 1.8"/></svg></span><div><h3>Applications</h3><p class="sub">Front to back</p></div></div>
+            <ul><li>C# WinForms desktop applications, designed with Telerik UI and Guna UI</li><li>Web front ends: HTML, CSS, JavaScript</li><li>Node.js back ends</li><li>Python scripting</li><li>Java, with NetBeans</li><li>Microsoft Access and VBA</li><li>Role-based login and admin tools</li><li>Responsive layouts, light and dark themes</li></ul>
+          </article>
+          <article class="skill panel">
+            <div class="skill-top"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17.5h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7 8.6 4.5 4.5 0 0 0 7 17.5z"/><path d="M12 15V10.5M9.8 12.6L12 10.4l2.2 2.2"/></svg></span><div><h3>Delivery</h3><p class="sub">Getting it shipped</p></div></div>
+            <ul><li>Azure App Service deployment</li><li>Azure DevOps</li><li>Step-by-step, versioned releases</li><li>Setup guides and walkthroughs</li><li>AI-assisted development with Claude, Gemini and ChatGPT</li></ul>
+          </article>
         </div>
       </div>
     </section>
 
     <section class="block" id="work">
       <div class="wrap">
-        <div class="head"><span class="kanji" aria-hidden="true">三</span><h2>Selected work</h2><span class="jp" aria-hidden="true">作品</span></div>
-        <div class="work">
-          <article class="proj">
-            <div class="no" aria-hidden="true">01</div>
-            <div>
-              <h3>Hospital systems at BizBox Inc.</h3>
-              <div class="meta"><span class="status">Experience</span><span>Healthcare software</span></div>
-              <p>Hands-on experience with hospital software across four product areas: the Hospital Information System, Materials Management System, PhilHealth Management System and Financial Management System.</p>
-              <ul class="tags"><li>Hospital Information System</li><li>Materials Management</li><li>PhilHealth Management</li><li>Financial Management</li></ul>
-            </div>
-          </article>
-          <article class="proj">
-            <div class="no" aria-hidden="true">02</div>
-            <div>
-              <h3>POS System for Calle Uno Restobar</h3>
-              <div class="meta"><span class="status">Built</span><span>Standalone desktop app</span></div>
-              <p>A standalone point-of-sale application built for Calle Uno Restobar to handle its day-to-day sales.</p>
-              <ul class="tags"><li>C# WinForms</li><li>Point of sale</li><li>Standalone app</li></ul>
-            </div>
-          </article>
-          <article class="proj">
-            <div class="no" aria-hidden="true">03</div>
-            <div>
-              <h3>Endoscopy Management System</h3>
-              <div class="meta"><span class="status">Built</span><span>Standalone desktop app</span></div>
-              <p>A standalone application for endoscopy units that records patient imaging results and findings and prints them as reports.</p>
-              <ul class="tags"><li>C# WinForms</li><li>Patient imaging</li><li>Report printing</li></ul>
-            </div>
-          </article>
-          <article class="proj">
-            <div class="no" aria-hidden="true">04</div>
-            <div>
-              <h3>Custom SMS Bulk Sender</h3>
-              <div class="meta"><span class="status">Built · 2019</span><span>Standalone desktop app</span></div>
-              <p>A desktop application that sends text messages in bulk through a prepaid USB dongle with a SIM card. It reads all contact information from a CSV file. Coded entirely by hand in 2019, before AI-assisted development.</p>
-              <ul class="tags"><li>C# WinForms</li><li>USB dongle and SIM</li><li>CSV import</li><li>Hand-coded</li></ul>
-            </div>
-          </article>
-          <article class="proj">
-            <div class="no" aria-hidden="true">05</div>
-            <div>
-              <h3>HEDSA: Hybrid Encryption Decryption System Application</h3>
-              <div class="meta"><span class="status">Thesis · 2018</span><span>Perfect grade from the panel</span></div>
-              <p>My thesis project: a desktop application that encrypts and decrypts any file, saving it with a file extension you choose. It is called hybrid because it uses a public key and a private key together, one to encrypt each file and its pair to decrypt it. It can process every file in a folder in one run and recognizes the keys stored inside each file, so only HEDSA can open what HEDSA has encrypted. Coded entirely by hand in 2018, before AI-assisted development.</p>
-              <ul class="tags"><li>Java</li><li>NetBeans</li><li>Hybrid encryption</li><li>Bulk folder processing</li><li>Hand-coded</li></ul>
-            </div>
-          </article>
-          <article class="proj">
-            <div class="no" aria-hidden="true">06</div>
-            <div>
-              <h3>Transport Booking</h3>
-              <div class="meta"><span class="status">Live · v1.2</span><span>Scheduling platform</span></div>
-              <p>A calendar-based system for booking driver transportation. Staff request rides, dispatchers and admins approve them with conflict checks, drivers are assigned by availability and update trip status from their own page. Includes reports with CSV export, in-app notifications and an audit log.</p>
-              <ul class="tags"><li>SQL Server</li><li>Node.js</li><li>Azure App Service</li><li>Azure SQL</li><li>Responsive UI</li></ul>
+        <div class="sec-head"><div><p class="eyebrow">03 · Work</p><h2>Selected work</h2></div><span class="kj" aria-hidden="true">作品</span></div>
+        <div class="filters" role="group" aria-label="Filter projects">
+          <button type="button" class="filter" data-f="all" aria-pressed="true">All <span>11</span></button>
+          <button type="button" class="filter" data-f="web" aria-pressed="false">Web apps <span>4</span></button>
+          <button type="button" class="filter" data-f="desktop" aria-pressed="false">Desktop apps <span>6</span></button>
+          <button type="button" class="filter" data-f="healthcare" aria-pressed="false">Healthcare <span>3</span></button>
+          <button type="button" class="filter" data-f="academic" aria-pressed="false">Academic <span>2</span></button>
+        </div>
+        <p class="group-label" id="g-feat">Featured web apps</p>
+        <div class="grid-feat">
+          <article class="pcard feat" data-cat="web">
               <button type="button" class="shot" data-full="images/transport-login.jpg" aria-label="View larger: Transport Booking sign-in screen">
-                <img src="images/transport-login.jpg" alt="Transport Booking sign-in screen" width="1000" height="936" loading="lazy">
-                <span class="shot-cap">Sign-in screen · tap to enlarge</span>
-              </button>
-            </div>
+                  <img src="images/transport-login.jpg" alt="Transport Booking sign-in screen" width="1000" height="936" loading="lazy">
+                  <span class="shot-cap">Sign-in screen · tap to enlarge</span>
+                </button>
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">01</span><div class="meta"><span class="status">Live · v1.2</span><span>Scheduling platform</span></div></div>
+                <h3>Transport Booking</h3>
+                <p>A calendar-based system for booking driver transportation. Staff request rides, dispatchers and admins approve them with conflict checks, drivers are assigned by availability and update trip status from their own page. Includes reports with CSV export, in-app notifications and an audit log.</p>
+                <ul class="tags"><li>SQL Server</li><li>Node.js</li><li>Azure App Service</li><li>Azure SQL</li><li>Responsive UI</li></ul>
+              </div>
           </article>
-          <article class="proj">
-            <div class="no" aria-hidden="true">07</div>
-            <div>
-              <h3>Hospital Information System</h3>
-              <div class="meta"><span class="status">Built · 10 modules</span><span>Healthcare operations</span></div>
-              <p>A hospital system built module by module on a local SQL Server database, starting at secure login and running through to patient admissions, with a modern web interface on top.</p>
-              <ul class="tags"><li>SQL Server</li><li>SSMS</li><li>Web front end</li><li>Role-based access</li></ul>
+          <article class="pcard feat" data-cat="web healthcare">
               <button type="button" class="shot" data-full="images/his-login.jpg" aria-label="View larger: Hospital Information System sign-in screen">
-                <img src="images/his-login.jpg" alt="Hospital Information System sign-in screen" width="998" height="731" loading="lazy">
-                <span class="shot-cap">Sign-in screen · tap to enlarge</span>
-              </button>
-            </div>
+                  <img src="images/his-login.jpg" alt="Hospital Information System sign-in screen" width="998" height="731" loading="lazy">
+                  <span class="shot-cap">Sign-in screen · tap to enlarge</span>
+                </button>
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">02</span><div class="meta"><span class="status">Built · 10 modules</span><span>Healthcare operations</span></div></div>
+                <h3>Hospital Information System</h3>
+                <p>A hospital system built module by module on a local SQL Server database, starting at secure login and running through to patient admissions, with a modern web interface on top.</p>
+                <ul class="tags"><li>SQL Server</li><li>SSMS</li><li>Web front end</li><li>Role-based access</li></ul>
+              </div>
           </article>
-          <article class="proj">
-            <div class="no" aria-hidden="true">08</div>
-            <div>
-              <h3>ParkSpot</h3>
-              <div class="meta"><span class="status wip">In progress</span><span>Map-based parking finder</span></div>
-              <p>A web app that shows on a map which designated parking slots are free at malls, condos and restaurants, so a reserved spot stays with the person it belongs to. Sites, zones and slots are managed by admins, with QR codes per slot.</p>
-              <ul class="tags"><li>SQL Server</li><li>Node.js</li><li>Maps</li><li>QR codes</li></ul>
+          <article class="pcard feat" data-cat="web">
               <button type="button" class="shot" data-full="images/parkspot-login.jpg" aria-label="View larger: ParkSpot sign-in screen with a parking slot map">
-                <img src="images/parkspot-login.jpg" alt="ParkSpot sign-in screen with a parking slot map" width="984" height="934" loading="lazy">
-                <span class="shot-cap">Sign-in screen · tap to enlarge</span>
-              </button>
-            </div>
+                  <img src="images/parkspot-login.jpg" alt="ParkSpot sign-in screen with a parking slot map" width="984" height="934" loading="lazy">
+                  <span class="shot-cap">Sign-in screen · tap to enlarge</span>
+                </button>
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">03</span><div class="meta"><span class="status wip">In progress</span><span>Map-based parking finder</span></div></div>
+                <h3>ParkSpot</h3>
+                <p>A web app that shows on a map which designated parking slots are free at malls, condos and restaurants, so a reserved spot stays with the person it belongs to. Sites, zones and slots are managed by admins, with QR codes per slot.</p>
+                <ul class="tags"><li>SQL Server</li><li>Node.js</li><li>Maps</li><li>QR codes</li></ul>
+              </div>
           </article>
-          <article class="proj">
-            <div class="no" aria-hidden="true">09</div>
-            <div>
-              <h3>PetFriendster</h3>
-              <div class="meta"><span class="status wip">In progress</span><span>Social network for pets</span></div>
-              <p>A social network for pets of every kind. Owners create pet profiles with photos and health records, post to a feed, connect with other pets, find pet-friendly places on a map, arrange playdates and message each other.</p>
-              <ul class="tags"><li>SQL Server</li><li>Node.js</li><li>Feed and messaging</li><li>Places map</li><li>Mobile-first</li></ul>
+          <article class="pcard feat" data-cat="web">
               <button type="button" class="shot" data-full="images/petfriendster-login.jpg" aria-label="View larger: PetFriendster sign-in screen">
-                <img src="images/petfriendster-login.jpg" alt="PetFriendster sign-in screen" width="977" height="936" loading="lazy">
-                <span class="shot-cap">Sign-in screen · tap to enlarge</span>
-              </button>
-            </div>
-          </article>
-          <article class="proj">
-            <div class="no" aria-hidden="true">10</div>
-            <div>
-              <h3>Milagrosa Inventory System</h3>
-              <div class="meta"><span class="status wip">Client demo · Not launched</span><span>My biggest stepping stone</span></div>
-              <p>My first client demo, built by hand with my collaborator Rz as our first project together. It tracked stock moving in and out with a full item inventory and produced printed reports. We were inexperienced and ran out of funding before it could launch, so we stepped away. It was a fun journey, and it taught me more than any project that went smoothly.</p>
-              <ul class="tags"><li>C# WinForms</li><li>Inventory in and out</li><li>Printed reports</li><li>Hand-coded</li></ul>
-            </div>
-          </article>
-          <article class="proj">
-            <div class="no" aria-hidden="true">11</div>
-            <div>
-              <h3>Student Thesis Monitoring System</h3>
-              <div class="meta"><span class="status">First app</span><span>Where it started</span></div>
-              <p>The first application I ever built, written in Java, my first programming language, using NetBeans. It tracks the progress of student theses.</p>
-              <ul class="tags"><li>Java</li><li>NetBeans</li><li>Desktop app</li></ul>
-            </div>
+                  <img src="images/petfriendster-login.jpg" alt="PetFriendster sign-in screen" width="977" height="936" loading="lazy">
+                  <span class="shot-cap">Sign-in screen · tap to enlarge</span>
+                </button>
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">04</span><div class="meta"><span class="status wip">In progress</span><span>Social network for pets</span></div></div>
+                <h3>PetFriendster</h3>
+                <p>A social network for pets of every kind. Owners create pet profiles with photos and health records, post to a feed, connect with other pets, find pet-friendly places on a map, arrange playdates and message each other.</p>
+                <ul class="tags"><li>SQL Server</li><li>Node.js</li><li>Feed and messaging</li><li>Places map</li><li>Mobile-first</li></ul>
+              </div>
           </article>
         </div>
+        <p class="group-label" id="g-more">Desktop apps, experience and early work</p>
+        <div class="grid-more">
+          <article class="pcard" data-cat="healthcare">
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">05</span><div class="meta"><span class="status">Experience</span><span>Healthcare software</span></div></div>
+                <h3>Hospital systems at BizBox Inc.</h3>
+                <p>Hands-on experience with hospital software across four product areas: the Hospital Information System, Materials Management System, PhilHealth Management System and Financial Management System.</p>
+                <ul class="tags"><li>Hospital Information System</li><li>Materials Management</li><li>PhilHealth Management</li><li>Financial Management</li></ul>
+              </div>
+          </article>
+          <article class="pcard" data-cat="desktop">
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">06</span><div class="meta"><span class="status">Built</span><span>Standalone desktop app</span></div></div>
+                <h3>POS System for Calle Uno Restobar</h3>
+                <p>A standalone point-of-sale application built for Calle Uno Restobar to handle its day-to-day sales.</p>
+                <ul class="tags"><li>C# WinForms</li><li>Point of sale</li><li>Standalone app</li></ul>
+              </div>
+          </article>
+          <article class="pcard" data-cat="desktop healthcare">
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">07</span><div class="meta"><span class="status">Built</span><span>Standalone desktop app</span></div></div>
+                <h3>Endoscopy Management System</h3>
+                <p>A standalone application for endoscopy units that records patient imaging results and findings and prints them as reports.</p>
+                <ul class="tags"><li>C# WinForms</li><li>Patient imaging</li><li>Report printing</li></ul>
+              </div>
+          </article>
+          <article class="pcard" data-cat="desktop">
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">08</span><div class="meta"><span class="status">Built · 2019</span><span>Standalone desktop app</span></div></div>
+                <h3>Custom SMS Bulk Sender</h3>
+                <p>A desktop application that sends text messages in bulk through a prepaid USB dongle with a SIM card. It reads all contact information from a CSV file. Coded entirely by hand in 2019, before AI-assisted development.</p>
+                <ul class="tags"><li>C# WinForms</li><li>USB dongle and SIM</li><li>CSV import</li><li>Hand-coded</li></ul>
+              </div>
+          </article>
+          <article class="pcard" data-cat="desktop academic">
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">09</span><div class="meta"><span class="status">Thesis · 2018</span><span>File encryption tool</span></div></div>
+                <h3>HEDSA: Hybrid Encryption Decryption System Application</h3>
+                <p>My thesis project: a desktop application that encrypts and decrypts any file, saving it with a file extension you choose. It is called hybrid because it uses a public key and a private key together, one to encrypt each file and its pair to decrypt it. It can process every file in a folder in one run and recognizes the keys stored inside each file, so only HEDSA can open what HEDSA has encrypted. Coded entirely by hand in 2018, before AI-assisted development.</p>
+                <ul class="tags"><li>Java</li><li>NetBeans</li><li>Hybrid encryption</li><li>Bulk folder processing</li><li>Hand-coded</li></ul>
+              </div>
+          </article>
+          <article class="pcard" data-cat="desktop">
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">10</span><div class="meta"><span class="status wip">Client demo · Not launched</span><span>My biggest stepping stone</span></div></div>
+                <h3>Milagrosa Inventory System</h3>
+                <p>My first client demo, built by hand with my collaborator Rz as our first project together. It tracked stock moving in and out with a full item inventory and produced printed reports. We were inexperienced and ran out of funding before it could launch, so we stepped away. It was a fun journey, and it taught me more than any project that went smoothly.</p>
+                <ul class="tags"><li>C# WinForms</li><li>Inventory in and out</li><li>Printed reports</li><li>Hand-coded</li></ul>
+              </div>
+          </article>
+          <article class="pcard" data-cat="desktop academic">
+              <div class="card-body">
+                <div class="card-top"><span class="no" aria-hidden="true">11</span><div class="meta"><span class="status">First app</span><span>Where it started</span></div></div>
+                <h3>Student Thesis Monitoring System</h3>
+                <p>The first application I ever built, written in Java, my first programming language, using NetBeans. It tracks the progress of student theses.</p>
+                <ul class="tags"><li>Java</li><li>NetBeans</li><li>Desktop app</li></ul>
+              </div>
+          </article>
+        </div>
+        <p class="no-match" id="no-match" hidden>No projects in this group yet.</p>
       </div>
     </section>
 
     <section class="block" id="contact">
       <div class="wrap">
-        <div class="head"><span class="kanji" aria-hidden="true">四</span><h2>Contact</h2><span class="jp" aria-hidden="true">連絡</span></div>
-        <div class="contact">
+        <div class="sec-head"><div><p class="eyebrow">04 · Contact</p><h2>Let's work together</h2></div><span class="kj" aria-hidden="true">連絡</span></div>
+        <div class="contact-panel panel">
           <div>
             <h3>Have a database that needs taming, or an app that needs building?</h3>
             <p>Send me a note with what you're working on. I usually reply within a day.</p>
+            <div class="cta">
+              <a class="btn primary" href="mailto:bsoberanoj@gmail.com">Email me</a>
+              <button type="button" class="btn" id="copy">Copy email address</button>
+            </div>
           </div>
-          <div class="card">
-            <div class="row"><span>Email</span><b><a id="email" href="mailto:bsoberanoj@gmail.com">bsoberanoj@gmail.com</a></b></div>
-            <div class="row"><span>LinkedIn</span><b><a href="https://www.linkedin.com/in/benedict-john-soberano-467207127" target="_blank" rel="noopener">linkedin.com/in/benedict-john-soberano-467207127</a></b></div>
-            <div class="row"><span>Location</span><b>Oton, Iloilo, Philippines</b></div>
-            <button type="button" id="copy">Copy email address</button>
-          </div>
+          <ul class="details">
+            <li><span>Email</span><a id="email" href="mailto:bsoberanoj@gmail.com">bsoberanoj@gmail.com</a></li>
+            <li><span>LinkedIn</span><a href="https://www.linkedin.com/in/benedict-john-soberano-467207127" target="_blank" rel="noopener">linkedin.com/in/benedict-john-soberano-467207127</a></li>
+            <li><span>Location</span><b>Oton, Iloilo, Philippines</b></li>
+          </ul>
         </div>
       </div>
     </section>
   </main>
 
-  <div class="waves" aria-hidden="true"></div>
+  <button type="button" class="to-top" id="to-top" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+  </button>
   <footer>
-    <div class="wrap"><span>© 2026 Benedict John Soberano</span><span>一期一会 · one time, one meeting</span></div>
+    <div class="wrap"><span>© 2026 Benedict John Soberano</span><span><span class="jp">一期一会</span> · one time, one meeting</span></div>
   </footer>
 </div>
 
 <script>
+/* ---------- motion: progress line, active section, back to top, scroll reveal ---------- */
+(function () {
+  var bar = document.getElementById('progress'), top = document.getElementById('to-top');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function onScroll() {
+    var h = document.documentElement.scrollHeight - window.innerHeight, y = window.scrollY || window.pageYOffset || 0;
+    bar.style.transform = 'scaleX(' + (h > 0 ? Math.min(1, y / h) : 0) + ')';
+    top.classList.toggle('show', y > window.innerHeight * .8);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  top.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); document.querySelector('.brand').focus({ preventScroll: true }); });
+
+  var links = {}; document.querySelectorAll('.nav nav a').forEach(function (a) { links[a.getAttribute('href').slice(1)] = a; });
+  if ('IntersectionObserver' in window) {
+    var spy = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        Object.keys(links).forEach(function (k) { links[k].classList.toggle('active', k === e.target.id); });
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    Object.keys(links).forEach(function (k) { var sec = document.getElementById(k); if (sec) spy.observe(sec); });
+
+    if (!reduce) {
+      var items = document.querySelectorAll('.sec-head, .about-grid > *, .skills > .skill, .grid-feat > .pcard, .grid-more > .pcard, .filters, .contact-panel, .stats');
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.remove('pre'); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -8% 0px' });
+      items.forEach(function (el) {
+        el.classList.add('reveal');
+        var parent = el.parentElement, idx = Array.prototype.indexOf.call(parent.children, el);
+        if (parent.classList.contains('grid-more') || parent.classList.contains('grid-feat') || parent.classList.contains('skills')) el.style.setProperty('--d', (idx % 3) * .08 + 's');
+        if (el.getBoundingClientRect().top > window.innerHeight * .92) { el.classList.add('pre'); io.observe(el); }   /* only what's not yet on screen */
+      });
+    }
+  }
+})();
+
+/* ---------- project filters ---------- */
+(function () {
+  var btns = document.querySelectorAll('.filter'), cards = document.querySelectorAll('#work .pcard');
+  var gf = document.getElementById('g-feat'), gm = document.getElementById('g-more'), none = document.getElementById('no-match');
+  function apply(f) {
+    var shownF = 0, shownM = 0;
+    cards.forEach(function (c) {
+      var ok = f === 'all' || c.getAttribute('data-cat').split(' ').indexOf(f) >= 0;
+      c.hidden = !ok; if (ok) { if (c.classList.contains('feat')) shownF++; else shownM++; }
+    });
+    gf.hidden = !shownF; gf.nextElementSibling.hidden = !shownF;
+    gm.hidden = !shownM; gm.nextElementSibling.hidden = !shownM;
+    none.hidden = shownF + shownM > 0;
+    btns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-f') === f ? 'true' : 'false'); });
+  }
+  btns.forEach(function (b) { b.addEventListener('click', function () { apply(b.getAttribute('data-f')); }); });
+})();
+
 /* ---------- screenshot viewer ---------- */
 (function () {
   var box = document.getElementById('lightbox'), img = document.getElementById('lightbox-img'), closeBtn = document.getElementById('lightbox-close'), opener = null;
