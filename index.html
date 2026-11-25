@@ -2113,6 +2113,14 @@ var FORM_ENDPOINT = '';
   function arm() { armed = true; gestureEvents.forEach(function (ev) { window.addEventListener(ev, onFirstGesture, true); }); }
   function disarm() { if (!armed) return; armed = false; gestureEvents.forEach(function (ev) { window.removeEventListener(ev, onFirstGesture, true); }); }
 
+  /* hovering the music button always names the piece that is playing right now */
+  function musicStatus() {
+    if (armed) return 'Tap anywhere for <b>music</b>';
+    return musicOn ? 'Music: <b>' + MLABEL[current] + '</b> \u00b7 Tap to mute' : 'Music: <b>Off</b> \u00b7 Tap to play';
+  }
+  function refreshMusicTip() { if (!mtip.classList.contains('show')) mtip.innerHTML = musicStatus(); }
+  mbtn.parentNode.addEventListener('mouseenter', refreshMusicTip);
+  mbtn.addEventListener('focus', refreshMusicTip);
   mbtn.addEventListener('click', function () {
     if (armed || !musicOn) { startMusic(); savePref('on'); }
     else { stopMusic(); savePref('off'); }
