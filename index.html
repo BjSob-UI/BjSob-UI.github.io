@@ -458,7 +458,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
             <div>
               <h3>HEDSA: Hybrid Encryption Decryption System Application</h3>
               <div class="meta"><span class="status">Thesis · 2018</span><span>Perfect grade from the panel</span></div>
-              <p>My thesis project: a desktop application that encrypts and decrypts any file, saving it with a file extension you choose. It can process every file in a folder in one run and recognizes the keys stored inside each file, so only HEDSA can open what HEDSA has encrypted. Coded entirely by hand in 2018, before AI-assisted development.</p>
+              <p>My thesis project: a desktop application that encrypts and decrypts any file, saving it with a file extension you choose. It is called hybrid because it uses a public key and a private key together, one to encrypt each file and its pair to decrypt it. It can process every file in a folder in one run and recognizes the keys stored inside each file, so only HEDSA can open what HEDSA has encrypted. Coded entirely by hand in 2018, before AI-assisted development.</p>
               <ul class="tags"><li>Java</li><li>NetBeans</li><li>Hybrid encryption</li><li>Bulk folder processing</li><li>Hand-coded</li></ul>
             </div>
           </article>
@@ -999,11 +999,21 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
       });
     });
     var CLACK = render(.09, function (y) { for (var i = 0; i < y.length; i++) { var tt = i / SR; y[i] = (Math.sin(2 * Math.PI * 2150 * tt) * .75 + (Math.random() * 2 - 1) * .25) * Math.exp(-tt / .011); } });
+    var KANE = render(.3, function (y) {   /* atarigane: the bright clink of a festival hand gong */
+      var P = [[1870, 1, .09], [2980, .6, .06], [4460, .4, .04], [6120, .2, .03]];
+      for (var i = 0; i < y.length; i++) { var tt = i / SR, v = 0; for (var j = 0; j < P.length; j++) v += P[j][1] * Math.sin(2 * Math.PI * P[j][0] * tt) * Math.exp(-tt / P[j][2]); y[i] = .5 * v + (Math.random() * 2 - 1) * .3 * Math.exp(-tt / .004); }
+    });
+    var CHAPPA = render(.6, function (y) {   /* chappa: small hand cymbals */
+      var prev = 0;
+      for (var i = 0; i < y.length; i++) { var tt = i / SR, n = Math.random() * 2 - 1, hp = n - prev; prev = n; y[i] = (hp * .55 + .25 * Math.sin(2 * Math.PI * 3400 * tt) * Math.sin(2 * Math.PI * 517 * tt)) * Math.exp(-tt / .14); }
+    });
     var SNAP = render(.04, function (y) { var prev = 0; for (var i = 0; i < y.length; i++) { var n = Math.random() * 2 - 1; y[i] = (n - prev) * Math.exp(-i / SR / .006); prev = n; } });
     function hitAt(out, buf, t, v, p, rate) { var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = buf; if (rate) src.playbackRate.value = rate; g.gain.value = v; src.connect(g); g.connect(panTo(out, p)); src.start(t); }
     function sanba(out, t, v, p) {   /* Okinawan castanets: a quick ka-ra-ka */
       hitAt(out, CLACK, t, v, p == null ? .5 : p, 1.5); hitAt(out, CLACK, t + .035, v * .6, p == null ? .5 : p, 1.6); hitAt(out, CLACK, t + .07, v * .8, p == null ? .5 : p, 1.45);
     }
+    function kane(out, t, v, p) { hitAt(out, KANE, t, v, p == null ? .45 : p); }
+    function chappa(out, t, v, p) { hitAt(out, CHAPPA, t, v, p == null ? -.45 : p); }
     function furin(out, t, v) {   /* a glass wind chime */
       var fr = rnd(2100, 3300), d = panTo(out, rnd(-.8, .8));
       [[1, 1, 2.6], [2.42, .35, 1.4], [4.07, .15, .7]].forEach(function (q) {
@@ -1123,7 +1133,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
     function line(L, i, fn) { for (var n = 0; n < L.length; n++) if (L[n][0] === i) fn(L[n][1], L[n][2], n); }   /* L: [step, degree, length] */
     var MOODS = {
       green: {   /* golden shore: Okinawan island swing. Sanshin hook, flute answers, castanets and hand drums */
-        bpm: 112, root: 60, scale: RYUKYU, wet: .32, lvl: 1.35,
+        bpm: 116, root: 60, scale: RYUKYU, wet: .3, lvl: 1.35,
         amb: function (sess) { wind(sess, .008, 1400); },
         O1: [[0, 5, 2], [2, 6, 2], [4, 7, 2], [6, 6, 2], [8, 5, 4], [12, 3, 2], [14, 4, 2], [16, 5, 2], [18, 4, 2], [20, 3, 2], [22, 2, 2], [24, 1, 4], [28, 2, 2], [30, 3, 2]],
         O2: [[0, 5, 2], [2, 6, 2], [4, 7, 2], [6, 8, 2], [8, 9, 4], [12, 8, 2], [14, 7, 2], [16, 6, 2], [18, 5, 2], [20, 4, 2], [22, 3, 2], [24, 5, 8]],
@@ -1141,38 +1151,37 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
             if (ph >= 6 && len >= 2) flute(out, tt, m + 12, .05, len * s * .9, { fue: true, pan: .35 });
             if (cyc % 2 && ph >= 2 && ph < 4 && len >= 4) koto(out, tt, m - 12, .12, .3);
           });
-          if (ph >= 1 && k % 4 === 0) koto(out, T + hum(), r - 12 + cr + [0, 7, 12, 7][(k / 4) % 4], .17, -.4);
-          if (ph >= 1 && k % 8 === 6) sanba(out, T, .12);
-          if (ph >= 2 && (k % 16 === 0 || k % 16 === 10)) taiko(out, T, .34, 1, -.1);
+          if (k % 4 === 0) koto(out, T + hum(), r - 12 + cr + [0, 7, 12, 7][(k / 4) % 4], .17, -.4);
+          if (k % 8 === 6) sanba(out, T, .12);
+          if (k % 128 === 0) chappa(out, t, .15);
+          if (k % 16 === 0 || k % 16 === 10) taiko(out, T, .34, 1, -.1);
           var SH = [1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1];
-          if (ph >= 2 && SH[k % 16]) taiko(out, T, k % 8 === 0 ? .22 : .12, 0, .3);
+          if (SH[k % 16]) taiko(out, T, k % 8 === 0 ? .22 : .12, 0, .3);
           if (ph === 7 && i >= 28) taiko(out, T, .18 + (i - 28) * .05, 0, -.2);   /* little roll into the next round */
           if (ph >= 2 && k % 32 === 0) strings(out, t, chord(r - 12 + cr, [0, 4, 7, 12]), .014, s * 32 + .8);
         }
       },
-      silver: {   /* moonlit shrine: an evolving koto pattern, shakuhachi song, wind chimes, a slow heartbeat drum */
-        bpm: 76, root: 62, scale: KUMOI, wet: .75, lvl: 1.2,
-        amb: function (sess) { wind(sess, .022, 1000); },
-        PAT: [0, 2, 4, 2, 5, 4, 2, 4],
-        S1: [[0, 7, 6], [6, 6, 2], [8, 5, 4], [12, 7, 4], [16, 8, 8], [24, 7, 4], [28, 5, 4]],
-        S2: [[0, 5, 6], [6, 4, 2], [8, 3, 4], [12, 2, 4], [16, 1, 8], [24, 2, 8]],
+      silver: {   /* moonlit dance: built like the harvest piece, in the wistful kumoi scale with a shakuhachi colour */
+        bpm: 104, root: 62, scale: KUMOI, wet: .38, lvl: 1.3,
+        amb: function (sess) { wind(sess, .007, 900); },
+        D1: [[0, 5, 2], [2, 6, 1], [3, 5, 1], [4, 4, 2], [6, 3, 2], [8, 4, 2], [10, 5, 2], [12, 7, 4], [16, 6, 2], [18, 5, 2], [20, 4, 2], [22, 3, 1], [23, 4, 1], [24, 5, 6], [30, 3, 2]],
+        D2: [[0, 5, 2], [2, 6, 1], [3, 5, 1], [4, 4, 2], [6, 3, 2], [8, 4, 2], [10, 5, 2], [12, 8, 4], [16, 7, 2], [18, 6, 2], [20, 5, 2], [22, 4, 1], [23, 3, 1], [24, 2, 8]],
         play: function (k, t, s, out) {
-          var st = this.st, r = this.root, sc = this.scale, i = k % 32, ph = Math.floor(k / 32) % 8;
-          var SHIFT = [0, -2, -3, -1], sh = SHIFT[(k / 32 | 0) % 4];   /* the pattern moves through the scale every two bars */
-          if (!st.pat || k % 64 === 0) {   /* every four bars one note of the pattern changes, so it keeps evolving */
-            st.pat = (st.pat || this.PAT.slice()); var j = (Math.random() * 8) | 0;
-            st.pat[j] = Math.max(0, Math.min(7, st.pat[j] + (chance(.5) ? 1 : -1)));
-          }
-          var swell = .55 + .45 * Math.sin((k % 256) / 256 * Math.PI);   /* rises and falls over each cycle */
-          if (k % 2 === 0) koto(out, t + hum(), deg(r, sc, st.pat[(k / 2) % 8] + sh), (k % 8 === 0 ? .16 : .1) * swell, (k / 2) % 2 ? .4 : -.4);
-          if (k % 32 === 0) { strings(out, t, chord(r - 24, [0, 7, 12]).map(function (m) { return m + sc[((sh % 5) + 5) % 5] - (sh < 0 ? 12 : 0); }), .02, s * 32 + 1.5); }
-          if (ph >= 2 && ph <= 5) line(ph % 2 ? this.S2 : this.S1, i, function (d, len) { flute(out, t, deg(r, sc, d), .14, len * s + .25, { meri: len >= 8, pan: -.2 }); });
-          if (ph >= 6) line(ph % 2 ? this.S2 : this.S1, i, function (d) { koto(out, t + hum(), deg(r, sc, d + 5), .2, .2); });
-          if (ph >= 2 && k % 16 === 0) taiko(out, t, .2 * swell + .05, 2, 0);
-          if (ph >= 2 && k % 16 === 3) taiko(out, t, .1 * swell + .03, 2, 0);
-          if (ph >= 4 && k % 128 === 0) choir(out, t, chord(r - 12, [0, 7, 12, 14]), .04, s * 64);
-          if (k % 4 === 1 && chance(.07)) furin(out, t, .035);
-          if (k % 128 === 120) bell(out, t, r + 12, .04);
+          var r = this.root, sc = this.scale, i = k % 32, ph = Math.floor(k / 32) % 8;
+          var ROOTS = [0, -3, -5, -2], cr = ROOTS[(k / 32 | 0) % 4];
+          if (k % 32 === 0) strings(out, t, chord(r - 12 + cr, [0, 7, 12]), .018, s * 32 + 1);
+          line(ph % 2 ? this.D2 : this.D1, i, function (d, len) {
+            var m = deg(r, sc, d), tt = t + hum();
+            if (ph < 2) koto(out, tt, m, .24, .2); else shamisen(out, tt, m, .22, .25);
+            if (ph >= 4 && len >= 2) flute(out, tt, m, .1, len * s + .05, { pan: -.3 });
+          });
+          if (k % 4 === 0) koto(out, t + hum(), r - 12 + cr + [0, 7, 12, 7][(k / 4) % 4], .16, -.4);
+          var SH = [1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1];
+          if (ph >= 2 && SH[k % 16]) taiko(out, t, k % 4 === 0 ? .3 : .17, 0, .3);
+          if (k % 16 === 0 || (k % 16 === 10 && ph >= 2)) taiko(out, t, .4, 1, -.1);
+          if (k % 8 === 4) clack(out, t, .09);
+          if (ph === 7 && i >= 28) taiko(out, t, .2 + (i - 28) * .05, 0, -.2);
+          if (k % 256 === 128) choir(out, t, chord(r - 12, [0, 7, 12, 14]), .035, s * 64);
         }
       },
       gold: {   /* harvest festival: a bouncing hook on koto, then shamisen, then joined by the fue */
@@ -1200,7 +1209,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
         }
       },
       red: {   /* ronin duel: a rolling 12/8 rhythm, rapid tsugaru shamisen, thundering taiko, a break, then everything */
-        bpm: 97, root: 52, scale: IN, wet: .28, lvl: .58,   /* one step = a triplet eighth; 12 steps per bar */
+        bpm: 104, root: 52, scale: IN, wet: .26, lvl: .58,   /* one step = a triplet eighth; 12 steps per bar */
         amb: function (sess) { wind(sess, .016, 300); },
         RIFF: [[0, 0, 1], [1, 0, 1], [2, 1, 1], [3, 3, 2], [5, 1, 1], [6, 0, 1], [7, 0, 1], [8, 1, 1], [9, 4, 2], [11, 3, 1], [12, 0, 1], [13, 0, 1], [14, 1, 1], [15, 3, 1], [16, 4, 1], [17, 5, 1], [18, 6, 3], [21, 5, 1], [22, 4, 1], [23, 3, 1]],
         M1: [[0, 7, 6], [6, 8, 3], [9, 7, 3], [12, 6, 6], [18, 5, 3], [21, 4, 3]],
@@ -1212,21 +1221,21 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
           if (k % 192 === 0) { drone(out, t, r - 12, .05, s * 192 + .5); horn(out, t, r - 12, .08, s * 9); }
           if (BIG[b] && !last) taiko(out, t, brk ? .5 : .7, 2);
           if (!brk && MID[b] && !last) taiko(out, t, .3, 1, -.25);
-          if (ph >= 2 && !brk && !last) taiko(out, t, b % 3 === 0 ? .2 : .09, 0, .35);   /* the rolling triplet pulse */
+          if (!brk && !last) taiko(out, t, b % 3 === 0 ? .2 : .09, 0, .35);   /* the rolling triplet pulse */
+          if (i === 0 && !brk) chappa(out, t, .14);
           if (last) taiko(out, t, .3 + (i - 18) * .08, (i % 2) ? 0 : 1, (i % 2) ? .3 : -.3);
-          if (ph === 0 && b % 3 === 0) taiko(out, t, .1 + i * .008, 0, .35);
-          if (ph >= 1 && !brk) line(this.RIFF, i, function (d, len) {
+          if (!brk) line(this.RIFF, i, function (d, len) {
             var m = deg(r, sc, d) + 12;
             if (len >= 2) tremolo(out, t + hum(), m, .17, len * s, 14, .3); else shamisen(out, t + hum(), m, .2, .3);
           });
           if (brk && i % 6 === 0) tremolo(out, t, deg(r, sc, [5, 6, 7, 8][i / 6]) + 12, .19, s * 5.5, 16, 0);   /* the solo break */
-          if (ph >= 2 && b % 6 === 0 && !brk) koto(out, t, r - 12 + (b === 6 ? 7 : 0), .2, -.4);
-          if (ph >= 4 && !brk) line(ph % 2 ? this.M2 : this.M1, i, function (d, len) {
-            var m = deg(r, sc, d) + 12;
-            flute(out, t, m, .11, len * s + .15, { meri: len >= 6, pan: -.3 });
-            if (ph === 7 && len >= 6) horn(out, t, m - 24, .05, len * s);
+          if (b % 3 === 0 && !brk) koto(out, t, r - 12 + [0, 7, 12, 7][b / 3], .2, -.4);
+          if (ph >= 2 && !brk) line(ph % 2 ? this.M2 : this.M1, i, function (d, len) {
+            var m = deg(r, sc, d);
+            flute(out, t, m, .13, len * s + .15, { meri: len >= 6, pan: -.3 });
+            if (ph === 7 && len >= 6) horn(out, t, m - 12, .05, len * s);
           });
-          if (ph >= 4 && i === 0 && !brk) strings(out, t, chord(r, ph % 2 ? [1, 8, 13] : [0, 7, 12]), .032, s * 24, true);
+          if (ph >= 2 && i === 0 && !brk) strings(out, t, chord(r, ph % 2 ? [1, 8, 13] : [0, 7, 12]), .032, s * 24, true);
           if (ph === 7 && i === 0) choir(out, t, chord(r + 12, [-4, 1, 8, 13]), .05, s * 24);
         }
       }
@@ -1263,7 +1272,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
         mood = name; MOODS[name].st = {}; step = 0; nextT = t + .08;
         session = openSession(name);
         ramp(session.g.gain, MOODS[name].lvl || 1, t, accent ? .2 : 1.2);
-        if (accent) { taiko(session.g, t + .03, .85, 2); bell(session.g, t + .05, MOODS[name].root + 12, .055); }
+        if (accent) { taiko(session.g, t + .03, .85, 2); chappa(session.g, t + .03, .12); }
       },
       start: function () { nextT = Math.max(nextT, ctx.currentTime + .06); ramp(master.gain, .62, ctx.currentTime, 1.5); },
       stop: function () { ramp(master.gain, 0, ctx.currentTime, .8); },
@@ -1272,7 +1281,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
     };
   }
 
-  var MLABEL = { gold: 'Harvest festival', silver: 'Moonlit shrine', green: 'Golden shore', red: 'Ronin duel' };
+  var MLABEL = { gold: 'Harvest festival', silver: 'Moonlit dance', green: 'Golden shore', red: 'Ronin duel' };
   var musicOn = false, actx = null, music = null, musicTimer = null, musicLoop = null;
   var mbtn = document.getElementById('music-btn'), mtip = document.getElementById('music-tip');
   function musicTip(html) {
