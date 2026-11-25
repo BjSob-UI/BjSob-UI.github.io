@@ -11,7 +11,7 @@ try { var a = localStorage.getItem('accent'); if (/^(silver|green|red)$/.test(a)
 <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23f3d98a%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23b8922a%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%23070605%22/%3E%3Crect%20x%3D%222.5%22%20y%3D%222.5%22%20width%3D%2259%22%20height%3D%2259%22%20rx%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22%23d4af37%22%20stroke-width%3D%222%22/%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%2227%22%20r%3D%2214%22%20fill%3D%22url%28%23g%29%22/%3E%3Cpath%20d%3D%22M4%2052%20L20%2030%20L29%2041%20L37%2033%20L60%2054%20L60%2060%20L4%2060%20Z%22%20fill%3D%22%23070605%22%20stroke%3D%22%23f3d98a%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Shippori+Mincho:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Shippori+Mincho:wght@700&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
 <style>
 :root {
   color-scheme: dark;
@@ -55,6 +55,7 @@ html[data-accent="red"] {
   --display: "Sora", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --body: "Manrope", "Segoe UI", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --serif-i: "Instrument Serif", "Iowan Old Style", Georgia, serif;
   --jp: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
   --r-lg: 20px; --r-md: 14px; --r-sm: 10px;
 }
@@ -144,6 +145,9 @@ h1, h2, h3 { font-family: var(--display); text-wrap: balance; }
 }
 .theme-tip b { color: var(--accent-bright); font-weight: 500; }
 .tool:hover > .theme-tip, .theme-btn:focus-visible + .theme-tip, .theme-tip.show { opacity: 1; transform: none; }
+.themes:hover .theme-tip.show { opacity: 0; transform: translateY(-4px); }
+.themes .tool:hover > .theme-tip { opacity: 1; transform: none; }
+.theme-tip { line-height: 1.7; }
 
 /* ---------- hero ---------- */
 .hero { padding: 76px 0 56px; }
@@ -358,7 +362,7 @@ footer .jp { font-family: var(--jp); }
 
 /* ---------- languages row (original monogram tiles) ---------- */
 .lang-row { margin-bottom: 26px; }
-.lang-tiles { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.lang-tiles { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .lt {
   display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: var(--r-md);
   background: rgba(var(--panel-rgb), .8); border: 1px solid rgba(var(--accent-rgb), .14);
@@ -378,6 +382,100 @@ footer .jp { font-family: var(--jp); }
 @media (max-width: 1020px) { .lang-tiles { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .lang-tiles { grid-template-columns: 1fr; } .lt-mono { min-width: 48px; height: 48px; font-size: .88rem; } }
 @media (prefers-reduced-motion: reduce) { .lt, .lt-mono { transition: none; } }
+
+/* ---------- skills marquee ---------- */
+.marquee { padding: 8px 0 12px; display: grid; gap: 10px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+.mq-row { overflow: hidden; }
+.mq-track { display: flex; width: max-content; list-style: none; gap: 22px; align-items: center; animation: mq 46s linear infinite; }
+.mq-row.rev .mq-track { animation-direction: reverse; animation-duration: 52s; }
+.marquee:hover .mq-track { animation-play-state: paused; }
+.mq-track li { font-family: var(--display); font-weight: 700; font-size: clamp(1.2rem, 2.4vw, 1.8rem); letter-spacing: -.02em; white-space: nowrap; color: var(--paper); opacity: .85; }
+.mq-row.rev .mq-track li { color: transparent; -webkit-text-stroke: 1px rgba(var(--accent-rgb), .6); }
+.mq-track li.sep { font-size: 1rem; color: var(--accent); -webkit-text-stroke: 0; opacity: 1; }
+@keyframes mq { to { transform: translateX(-50%); } }
+
+/* ---------- services ---------- */
+.svcs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.svc { position: relative; padding: 24px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; transition: transform .3s, border-color .3s, box-shadow .3s; }
+.svc::before {   /* a gold sheen sweeps across on hover */
+  content: ""; position: absolute; inset: 0; pointer-events: none; transform: translateX(-120%);
+  background: linear-gradient(115deg, transparent 30%, rgba(var(--bright-rgb), .12) 50%, transparent 70%); transition: transform .9s cubic-bezier(.2,.7,.2,1);
+}
+.svc:hover { transform: translateY(-6px); border-color: rgba(var(--accent-rgb), .5); box-shadow: 0 22px 46px rgba(0, 0, 0, .45); }
+.svc:hover::before { transform: translateX(120%); }
+.svc-top { display: flex; align-items: center; justify-content: space-between; }
+.svc-no { font-family: var(--mono); font-size: .8rem; color: var(--muted); }
+.svc h3 { font-size: 1.15rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.3; }
+.svc p { font-size: .93rem; opacity: .88; }
+.svc .tags { margin-top: auto; }
+.svc-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: .9rem; text-decoration: none; color: var(--accent-bright); }
+.svc-link svg { width: 16px; height: 16px; transition: transform .25s; }
+.svc-link:hover svg { transform: translateX(5px); }
+
+/* ---------- process stepper ---------- */
+.process { padding: 10px; }
+.pts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.pt {
+  position: relative; overflow: hidden; display: grid; gap: 2px; justify-items: start; text-align: left; cursor: pointer; font: inherit;
+  padding: 14px 16px 16px; border-radius: 12px; border: 1px solid transparent; background: transparent; color: var(--muted); transition: background .25s, color .25s, border-color .25s;
+}
+.pt b { font-family: var(--mono); font-weight: 500; font-size: .76rem; color: var(--accent); }
+.pt span { font-weight: 700; font-size: .95rem; }
+.pt:hover { color: var(--paper); background: rgba(var(--accent-rgb), .06); }
+.pt[aria-selected="true"] { color: var(--paper); background: rgba(var(--accent-rgb), .12); border-color: rgba(var(--accent-rgb), .3); }
+.pt-bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, var(--accent), var(--accent-bright)); }
+.pt[aria-selected="true"] .pt-bar { animation: pbar var(--step, 6s) linear forwards; }
+.process.paused .pt-bar { animation-play-state: paused; }
+@keyframes pbar { to { transform: scaleX(1); } }
+.pps { position: relative; min-height: 200px; }
+.pp { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: start; padding: 28px 22px 22px; }
+.pp[hidden] { display: none; }
+.pp:not([hidden]) { animation: ppin .55s cubic-bezier(.2,.8,.2,1); }
+@keyframes ppin { from { opacity: 0; transform: translateX(26px); } }
+.pp-no { font-family: var(--display); font-weight: 800; font-size: clamp(3.5rem, 8vw, 6rem); line-height: .9; color: transparent; -webkit-text-stroke: 1.5px rgba(var(--accent-rgb), .7); }
+.pp h3 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; }
+.pp p { margin-top: 8px; max-width: 58ch; opacity: .9; }
+.pp ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.pp li { font-size: .86rem; font-weight: 600; padding: 6px 12px; border-radius: 999px; color: var(--accent-bright); background: rgba(var(--accent-rgb), .1); border: 1px solid rgba(var(--accent-rgb), .22); }
+
+/* ---------- call-to-action band ---------- */
+.cta-wrap { padding: 10px 0 0; }
+.cta-band {
+  position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 28px;
+  padding: 30px 34px; border-radius: var(--r-lg); background: rgba(var(--panel-rgb), .9); isolation: isolate; overflow: hidden;
+}
+.cta-band::before {   /* a gold light runs around the border */
+  content: ""; position: absolute; inset: -50%; z-index: -2;
+  background: conic-gradient(from 0deg, transparent 0 70%, var(--accent-bright) 80%, var(--accent) 88%, transparent 96%); animation: spin 6s linear infinite;
+}
+.cta-band::after { content: ""; position: absolute; inset: 1.5px; z-index: -1; border-radius: calc(var(--r-lg) - 1.5px); background: rgb(var(--panel-rgb)); }
+@keyframes spin { to { transform: rotate(1turn); } }
+.cta-band h3 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -.025em; }
+.cta-band .em { font-size: 1.12em; }
+.cta-band p { color: var(--muted); margin-top: 4px; }
+
+@media (max-width: 1020px) { .svcs { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px) {
+  .svcs { grid-template-columns: 1fr; }
+  .pts { grid-template-columns: repeat(4, minmax(120px, 1fr)); overflow-x: auto; scroll-snap-type: x mandatory; }
+  .pt { scroll-snap-align: start; }
+  .pp { grid-template-columns: 1fr; gap: 6px; padding: 20px 12px 14px; }
+  .cta-band { padding: 24px 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mq-track, .cta-band::before { animation: none; }
+  .mq-row { overflow-x: auto; }
+  .pt[aria-selected="true"] .pt-bar { animation: none; transform: scaleX(1); }
+  .pp:not([hidden]) { animation: none; }
+  .svc, .svc::before { transition: none; }
+}
+
+/* ---------- italic emphasis ---------- */
+.sec-head h2 em, .em {
+  font-family: var(--serif-i); font-style: italic; font-weight: 400; letter-spacing: 0; padding-right: .06em;
+  background: linear-gradient(100deg, var(--accent-bright), var(--accent) 60%, var(--accent-bright)); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sec-head h2 em { font-size: 1.12em; }
 
 /* ---------- hero portrait ---------- */
 .hero-visual { position: relative; }
@@ -502,6 +600,10 @@ footer .jp { font-family: var(--jp); }
   .nav-inner { flex-wrap: wrap; border-radius: 22px; padding: 10px 10px 8px 12px; row-gap: 6px; }
   .nav nav { order: 3; width: 100%; justify-content: space-between; overflow-x: auto; }
   .nav nav a { padding: 7px 11px; font-size: .86rem; }
+  /* tooltips drop below the whole nav bar so they never cover the links row */
+  .nav-inner { position: relative; }
+  .themes, .tool { position: static; }
+  .theme-tip { top: calc(100% + 8px); right: 10px; }
   .hero { padding: 48px 0 30px; }
   .stats { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 36px; }
   section.block { padding: 64px 0; }
@@ -548,14 +650,12 @@ footer .jp { font-family: var(--jp); }
   <span class="lang" style="--x:2.9%;--s:76px;--dur:47.5s;--del:-2.3s;--sway:8.3s;--rot:-8.1deg"><i><b>C#</b><small>C Sharp</small></i></span>
   <span class="lang" style="--x:15.5%;--s:76px;--dur:38.9s;--del:-16.9s;--sway:5.3s;--rot:-8.2deg"><i><b>Java</b><small>Java</small></i></span>
   <span class="lang" style="--x:25.5%;--s:64px;--dur:60.7s;--del:-38.3s;--sway:7.3s;--rot:-8.8deg"><i><b>Py</b><small>Python</small></i></span>
-  <span class="lang" style="--x:37.5%;--s:64px;--dur:61.4s;--del:-2.9s;--sway:8.4s;--rot:-4.2deg"><i><b>JS</b><small>JavaScript</small></i></span>
   <span class="lang" style="--x:45.9%;--s:64px;--dur:51.7s;--del:-29.0s;--sway:7.7s;--rot:-7.9deg"><i><b>T-SQL</b><small>SQL</small></i></span>
   <span class="lang" style="--x:79.5%;--s:76px;--dur:54.8s;--del:-13.4s;--sway:7.3s;--rot:0.5deg"><i><b>Node</b><small>Node.js</small></i></span>
   <span class="lang" style="--x:94.3%;--s:100px;--dur:44.9s;--del:-44.0s;--sway:5.5s;--rot:-1.6deg"><i><b>VBA</b><small>VBA</small></i></span>
   <span class="lang m-hide" style="--x:5.5%;--s:76px;--dur:60.4s;--del:-25.5s;--sway:8.8s;--rot:-8.4deg"><i><b>C#</b><small>C Sharp</small></i></span>
   <span class="lang m-hide" style="--x:15.3%;--s:88px;--dur:46.2s;--del:-16.2s;--sway:7.0s;--rot:5.9deg"><i><b>Java</b><small>Java</small></i></span>
   <span class="lang m-hide" style="--x:23.4%;--s:64px;--dur:60.7s;--del:-28.8s;--sway:7.7s;--rot:-8.8deg"><i><b>Py</b><small>Python</small></i></span>
-  <span class="lang m-hide" style="--x:38.2%;--s:100px;--dur:44.8s;--del:-17.3s;--sway:7.7s;--rot:-9.5deg"><i><b>JS</b><small>JavaScript</small></i></span>
   <span class="lang m-hide" style="--x:47.8%;--s:76px;--dur:52.7s;--del:-26.0s;--sway:5.9s;--rot:-4.3deg"><i><b>T-SQL</b><small>SQL</small></i></span>
   <span class="lang m-hide" style="--x:80.2%;--s:100px;--dur:61.0s;--del:-9.2s;--sway:5.7s;--rot:-5.4deg"><i><b>Node</b><small>Node.js</small></i></span>
   <span class="lang m-hide" style="--x:90.4%;--s:100px;--dur:57.9s;--del:-10.6s;--sway:6.1s;--rot:-7.1deg"><i><b>VBA</b><small>VBA</small></i></span>
@@ -652,9 +752,14 @@ footer .jp { font-family: var(--jp); }
       </div>
     </section>
 
+    <section class="marquee" aria-label="Skills at a glance">
+      <div class="mq-row"><ul class="mq-track"><li>SQL Server</li><li class="sep" aria-hidden="true">✦</li><li>T-SQL</li><li class="sep" aria-hidden="true">✦</li><li>Stored procedures</li><li class="sep" aria-hidden="true">✦</li><li>Database design</li><li class="sep" aria-hidden="true">✦</li><li>Database administration</li><li class="sep" aria-hidden="true">✦</li><li>Reporting</li><li class="sep" aria-hidden="true">✦</li><li>Azure SQL</li><li class="sep" aria-hidden="true">✦</li><li>SSMS</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">SQL Server</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">T-SQL</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Stored procedures</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Database design</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Database administration</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Reporting</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Azure SQL</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">SSMS</li><li class="sep" aria-hidden="true">✦</li></ul></div>
+      <div class="mq-row rev"><ul class="mq-track"><li>C# WinForms</li><li class="sep" aria-hidden="true">✦</li><li>Node.js</li><li class="sep" aria-hidden="true">✦</li><li>Java</li><li class="sep" aria-hidden="true">✦</li><li>Python</li><li class="sep" aria-hidden="true">✦</li><li>VBA</li><li class="sep" aria-hidden="true">✦</li><li>Azure</li><li class="sep" aria-hidden="true">✦</li><li>Azure DevOps</li><li class="sep" aria-hidden="true">✦</li><li>Healthcare IT</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">C# WinForms</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Node.js</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Java</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Python</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">VBA</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Azure</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Azure DevOps</li><li class="sep" aria-hidden="true">✦</li><li aria-hidden="true">Healthcare IT</li><li class="sep" aria-hidden="true">✦</li></ul></div>
+    </section>
+
     <section class="block" id="about">
       <div class="wrap">
-        <div class="sec-head"><div><p class="eyebrow">01 · About</p><h2>The database comes first</h2></div><span class="kj" aria-hidden="true">経歴</span></div>
+        <div class="sec-head"><div><p class="eyebrow">01 · About</p><h2>The database comes <em>first</em></h2></div><span class="kj" aria-hidden="true">経歴</span></div>
         <div class="about-grid">
           <div class="about-text panel">
             <p>I work mostly in the database. I design schemas, write T-SQL and stored procedures, and build queries whose results have to hold up when someone checks them. That habit shapes how I write everything else.</p>
@@ -671,15 +776,50 @@ footer .jp { font-family: var(--jp); }
       </div>
     </section>
 
+    <section class="block" id="services">
+      <div class="wrap">
+        <div class="sec-head"><div><p class="eyebrow">02 · Services</p><h2>What I can <em>build</em> for you</h2></div><span class="kj" aria-hidden="true">仕事</span></div>
+        <div class="svcs">
+          <article class="svc panel">
+            <div class="svc-top"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v6.5c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8V5.5"/><path d="M4.5 12v6.5c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8V12"/></svg></span><span class="svc-no">01</span></div>
+            <h3>Database design &amp; T-SQL</h3>
+            <p>Schemas, stored procedures and reports built to hold up when someone checks the numbers.</p>
+            <ul class="tags"><li>Schema design</li><li>Stored procedures</li><li>Reporting</li></ul>
+            <a class="svc-link" href="#contact" data-reason="Project">Inquire now <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </article>
+          <article class="svc panel">
+            <div class="svc-top"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span><span class="svc-no">02</span></div>
+            <h3>Desktop applications</h3>
+            <p>Standalone C# WinForms apps for shops, clinics and offices, from point of sale to printed reports.</p>
+            <ul class="tags"><li>C# WinForms</li><li>Telerik UI</li><li>Guna UI</li></ul>
+            <a class="svc-link" href="#contact" data-reason="Project">Inquire now <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </article>
+          <article class="svc panel">
+            <div class="svc-top"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.8 5.6 3.8 9s-1.2 6.4-3.8 9c-2.6-2.6-3.8-5.6-3.8-9S9.4 5.6 12 3z"/></svg></span><span class="svc-no">03</span></div>
+            <h3>Web applications</h3>
+            <p>Role-based web apps on Node.js and SQL Server, built one working step at a time and deployed to Azure.</p>
+            <ul class="tags"><li>Node.js</li><li>SQL Server</li><li>Azure</li></ul>
+            <a class="svc-link" href="#contact" data-reason="Project">Inquire now <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </article>
+          <article class="svc panel">
+            <div class="svc-top"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M9.5 11.5a2.5 2.5 0 1 1 5 0v2h-5z"/></svg></span><span class="svc-no">04</span></div>
+            <h3>Database administration</h3>
+            <p>Users, roles and permissions, storage clean-up including shrinking MDF and LDF files, and directory access.</p>
+            <ul class="tags"><li>SSMS</li><li>Permissions</li><li>Azure AD</li></ul>
+            <a class="svc-link" href="#contact" data-reason="Project">Inquire now <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="block" id="skills">
       <div class="wrap">
-        <div class="sec-head"><div><p class="eyebrow">02 · Skills</p><h2>What I work with</h2></div><span class="kj" aria-hidden="true">技術</span></div>
+        <div class="sec-head"><div><p class="eyebrow">03 · Skills</p><h2>What I <em>work</em> with</h2></div><span class="kj" aria-hidden="true">技術</span></div>
         <div class="lang-row">
           <p class="group-label">Languages I code in</p>
           <ul class="lang-tiles">
           <li class="lt"><span class="lt-mono" aria-hidden="true">C#</span><div><h4>C#</h4><p>WinForms apps: POS, Endoscopy System, SMS Sender, Milagrosa Inventory</p></div></li>
           <li class="lt"><span class="lt-mono" aria-hidden="true">T-SQL</span><div><h4>T-SQL</h4><p>Stored procedures, reporting and every database behind my apps</p></div></li>
-          <li class="lt"><span class="lt-mono" aria-hidden="true">JS</span><div><h4>JavaScript</h4><p>Front ends for Transport Booking, HIS, ParkSpot and PetFriendster</p></div></li>
           <li class="lt"><span class="lt-mono" aria-hidden="true">Node</span><div><h4>Node.js</h4><p>Back ends for my four web apps</p></div></li>
           <li class="lt"><span class="lt-mono" aria-hidden="true">Java</span><div><h4>Java</h4><p>HEDSA and the Student Thesis Monitoring System, in NetBeans</p></div></li>
           <li class="lt"><span class="lt-mono" aria-hidden="true">Py</span><div><h4>Python</h4><p>Scripting and automation</p></div></li>
@@ -709,7 +849,7 @@ footer .jp { font-family: var(--jp); }
 
     <section class="block" id="work">
       <div class="wrap">
-        <div class="sec-head"><div><p class="eyebrow">03 · Work</p><h2>Selected work</h2></div><span class="kj" aria-hidden="true">作品</span></div>
+        <div class="sec-head"><div><p class="eyebrow">04 · Work</p><h2>Selected <em>work</em></h2></div><span class="kj" aria-hidden="true">作品</span></div>
         <div class="filters" role="group" aria-label="Filter projects">
           <button type="button" class="filter" data-f="all" aria-pressed="true">All <span>11</span></button>
           <button type="button" class="filter" data-f="web" aria-pressed="false">Web apps <span>4</span></button>
@@ -831,9 +971,36 @@ footer .jp { font-family: var(--jp); }
       </div>
     </section>
 
+    <section class="block" id="process">
+      <div class="wrap">
+        <div class="sec-head"><div><p class="eyebrow">05 · Process</p><h2>How I <em>work</em></h2></div><span class="kj" aria-hidden="true">工程</span></div>
+        <div class="process panel">
+          <div class="pts" role="tablist" aria-label="Steps"><button type="button" class="pt" role="tab" id="pt-0" aria-controls="pp-0" aria-selected="true" tabindex="0"><b>01</b><span>Understand</span><i class="pt-bar" aria-hidden="true"></i></button><button type="button" class="pt" role="tab" id="pt-1" aria-controls="pp-1" aria-selected="false" tabindex="-1"><b>02</b><span>Design the database</span><i class="pt-bar" aria-hidden="true"></i></button><button type="button" class="pt" role="tab" id="pt-2" aria-controls="pp-2" aria-selected="false" tabindex="-1"><b>03</b><span>Build step by step</span><i class="pt-bar" aria-hidden="true"></i></button><button type="button" class="pt" role="tab" id="pt-3" aria-controls="pp-3" aria-selected="false" tabindex="-1"><b>04</b><span>Deploy and hand over</span><i class="pt-bar" aria-hidden="true"></i></button></div>
+          <div class="pps">
+          <div class="pp" role="tabpanel" id="pp-0" aria-labelledby="pt-0">
+            <span class="pp-no" aria-hidden="true">01</span>
+            <div><h3>Understand</h3><p>We talk through what you need, who will use it and what data it has to handle.</p><ul><li>Requirements and users</li><li>Data you already have</li><li>What success looks like</li></ul></div>
+          </div>
+          <div class="pp" role="tabpanel" id="pp-1" aria-labelledby="pt-1" hidden>
+            <span class="pp-no" aria-hidden="true">02</span>
+            <div><h3>Design the database</h3><p>I design the schema first, so the app sits on data that stays clean and fast.</p><ul><li>Tables, keys and relationships</li><li>Stored procedures</li><li>Roles and permissions</li></ul></div>
+          </div>
+          <div class="pp" role="tabpanel" id="pp-2" aria-labelledby="pt-2" hidden>
+            <span class="pp-no" aria-hidden="true">03</span>
+            <div><h3>Build step by step</h3><p>You get a working version at every step to review, from the login page to the last report.</p><ul><li>A working build at each step</li><li>Your feedback folded in</li><li>Versioned releases</li></ul></div>
+          </div>
+          <div class="pp" role="tabpanel" id="pp-3" aria-labelledby="pt-3" hidden>
+            <span class="pp-no" aria-hidden="true">04</span>
+            <div><h3>Deploy and hand over</h3><p>I deploy it locally or to Azure, with a setup guide and admin tools so your team can run it.</p><ul><li>Local or Azure deployment</li><li>Setup guide</li><li>Admin account and reset tools</li></ul></div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="block" id="experience">
       <div class="wrap">
-        <div class="sec-head"><div><p class="eyebrow">04 · Experience</p><h2>Where I've worked</h2></div><span class="kj" aria-hidden="true">経験</span></div>
+        <div class="sec-head"><div><p class="eyebrow">06 · Experience</p><h2>Where I've <em>worked</em></h2></div><span class="kj" aria-hidden="true">経験</span></div>
         <div class="timeline">
           <span class="tl-fill" aria-hidden="true"></span>
           <ol class="tl-list">
@@ -878,9 +1045,18 @@ footer .jp { font-family: var(--jp); }
       </div>
     </section>
 
+    <section class="cta-wrap">
+      <div class="wrap">
+        <div class="cta-band">
+          <div><h3>Have a project in <span class="em">mind</span>?</h3><p>Tell me what you need. I usually reply within a day.</p></div>
+          <a class="btn primary" href="#contact">Let's talk <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </div>
+    </section>
+
     <section class="block" id="contact">
       <div class="wrap">
-        <div class="sec-head"><div><p class="eyebrow">05 · Contact</p><h2>Let's work together</h2></div><span class="kj" aria-hidden="true">連絡</span></div>
+        <div class="sec-head"><div><p class="eyebrow">07 · Contact</p><h2>Let's work <em>together</em></h2></div><span class="kj" aria-hidden="true">連絡</span></div>
         <div class="contact-panel panel">
           <div>
             <h3>Have a database that needs taming, or an app that needs building?</h3>
@@ -993,10 +1169,19 @@ footer .jp { font-family: var(--jp); }
 
     if (!reduce) {
       document.querySelectorAll('.sec-head h2').forEach(function (h) {   /* split headings into words that rise into place */
-        h.innerHTML = h.textContent.trim().split(/\s+/).map(function (w, n) { return '<span class="w"><i style="--wi:' + n + '">' + w + '</i></span>'; }).join(' ');
+        var out = [], n = 0;
+        h.childNodes.forEach(function (node) {
+          var isEm = node.nodeType === 1 && node.tagName === 'EM';
+          (node.textContent || '').trim().split(/\s+/).forEach(function (w) {
+            if (!w) return;
+            var inner = isEm ? '<em>' + w + '</em>' : w;
+            out.push('<span class="w"><i style="--wi:' + (n++) + '">' + inner + '</i></span>');
+          });
+        });
+        h.innerHTML = out.join(' ');
       });
       document.querySelectorAll('.skill li, .facts li').forEach(function (li) { li.style.setProperty('--li', Array.prototype.indexOf.call(li.parentElement.children, li)); });
-      var items = document.querySelectorAll('.sec-head, .about-grid > *, .lang-tiles > .lt, .skills > .skill, .grid-feat > .pcard, .grid-more > .pcard, .filters, .contact-panel, .stats, .tl-item');
+      var items = document.querySelectorAll('.sec-head, .about-grid > *, .svcs > .svc, .process, .cta-band, .lang-tiles > .lt, .skills > .skill, .grid-feat > .pcard, .grid-more > .pcard, .filters, .contact-panel, .stats, .tl-item');
       /* enter: animate in (from below when scrolling down, from above when scrolling back up) */
       var io = new IntersectionObserver(function (es) {
         es.forEach(function (e) { if (e.isIntersecting) e.target.classList.remove('pre'); });
@@ -1012,7 +1197,7 @@ footer .jp { font-family: var(--jp); }
       items.forEach(function (el) {
         el.classList.add('reveal');
         var parent = el.parentElement, idx = Array.prototype.indexOf.call(parent.children, el);
-        if (parent.classList.contains('grid-more') || parent.classList.contains('grid-feat') || parent.classList.contains('skills') || parent.classList.contains('lang-tiles')) el.style.setProperty('--d', (idx % 3) * .08 + 's');
+        if (parent.classList.contains('grid-more') || parent.classList.contains('grid-feat') || parent.classList.contains('skills') || parent.classList.contains('lang-tiles') || parent.classList.contains('svcs')) el.style.setProperty('--d', (idx % 3) * .08 + 's');
         if (el.getBoundingClientRect().top > window.innerHeight * .92) el.classList.add('pre');   /* only what's not yet on screen */
         io.observe(el); out.observe(el);
       });
@@ -1037,6 +1222,45 @@ footer .jp { font-family: var(--jp); }
   }
   btns.forEach(function (b) { b.addEventListener('click', function () { apply(b.getAttribute('data-f')); }); });
 })();
+
+/* ---------- process stepper: auto-advances, pauses on hover or focus, tap or swipe to change ---------- */
+(function () {
+  var box = document.querySelector('.process'); if (!box) return;
+  var tabs = box.querySelectorAll('.pt'), panes = box.querySelectorAll('.pp'), cur = 0, timer = null, STEP = 6000;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches, inView = false;
+  box.style.setProperty('--step', STEP / 1000 + 's');
+  function show(n, focus) {
+    cur = (n + tabs.length) % tabs.length;
+    tabs.forEach(function (t, i) { var on = i === cur; t.setAttribute('aria-selected', on ? 'true' : 'false'); t.tabIndex = on ? 0 : -1; var bar = t.querySelector('.pt-bar'); bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = ''; });
+    panes.forEach(function (p, i) { p.hidden = i !== cur; });
+    if (focus) tabs[cur].focus();
+    schedule();
+  }
+  function schedule() { clearTimeout(timer); if (!reduce && inView && !box.classList.contains('paused')) timer = setTimeout(function () { show(cur + 1); }, STEP); }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { show(i); });
+    t.addEventListener('keydown', function (e) { if (e.key === 'ArrowRight') { e.preventDefault(); show(cur + 1, true); } if (e.key === 'ArrowLeft') { e.preventDefault(); show(cur - 1, true); } });
+  });
+  box.addEventListener('mouseenter', function () { box.classList.add('paused'); clearTimeout(timer); });
+  box.addEventListener('mouseleave', function () { box.classList.remove('paused'); show(cur); });
+  box.addEventListener('focusin', function () { box.classList.add('paused'); clearTimeout(timer); });
+  box.addEventListener('focusout', function () { box.classList.remove('paused'); schedule(); });
+  var x0 = null;
+  box.querySelector('.pps').addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  box.querySelector('.pps').addEventListener('touchend', function (e) {
+    if (x0 === null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+  if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { inView = es[0].isIntersecting; if (inView) show(cur); else clearTimeout(timer); }, { threshold: .35 }).observe(box);
+})();
+
+/* ---------- "Inquire now" opens the form with Project selected ---------- */
+document.querySelectorAll('[data-reason]').forEach(function (a) {
+  a.addEventListener('click', function () {
+    var r = document.querySelector('.chips input[value="' + a.getAttribute('data-reason') + '"]'); if (r) r.checked = true;
+    setTimeout(function () { var n = document.getElementById('f-name'); if (n) n.focus({ preventScroll: true }); }, 700);
+  });
+});
 
 /* ---------- contact form ----------
    To have messages delivered straight to your inbox, create a free form at formspree.io and paste its
@@ -1347,7 +1571,7 @@ var FORM_ENDPOINT = '';
     if (name === 'gold') document.documentElement.removeAttribute('data-accent');
     else document.documentElement.setAttribute('data-accent', name);
     var nxt = LABEL[nextOf(name)];
-    tip.innerHTML = 'Theme: <b>' + LABEL[name] + '</b> \u00b7 Next: ' + nxt;
+    tip.innerHTML = 'Theme: <b>' + LABEL[name] + '</b> \u00b7 Next: ' + nxt + (typeof musicOn !== 'undefined' && musicOn ? '<br>Music: <b>' + MLABEL[name] + '</b>' : '');
     btn.setAttribute('aria-label', 'Color theme: ' + LABEL[name] + '. Activate to switch to ' + nxt + '.');
     var fav = document.getElementById('favicon'); if (fav) fav.href = iconFor(pal);
     var tc = document.getElementById('theme-color'); if (tc) tc.content = pal.bg[0];
@@ -1398,6 +1622,7 @@ var FORM_ENDPOINT = '';
       applyTheme(next, true); burst(); wave(x, y, R, 0, false); wave(x, y, R, 140, true);
     }
     turns++; orbit.style.transform = 'rotate(' + (turns * 90) + 'deg)';
+    if (typeof mtip !== 'undefined' && mtip) mtip.classList.remove('show');   /* never two tooltips at once */
     tip.classList.add('show'); clearTimeout(tipTimer);
     tipTimer = setTimeout(function () { tip.classList.remove('show'); }, 1800);
   });
@@ -1824,10 +2049,11 @@ var FORM_ENDPOINT = '';
   var musicOn = false, actx = null, music = null, musicTimer = null, musicLoop = null;
   var mbtn = document.getElementById('music-btn'), mtip = document.getElementById('music-tip');
   function musicTip(html) {
+    if (tip) tip.classList.remove('show');   /* never two tooltips at once */
     mtip.innerHTML = html; mtip.classList.add('show'); clearTimeout(musicTimer);
     musicTimer = setTimeout(function () { mtip.classList.remove('show'); }, 2200);
   }
-  function musicMood(name, accent) { if (musicOn && music) { music.setMood(name, accent); musicTip('Music: <b>' + MLABEL[name] + '</b>'); } }
+  function musicMood(name, accent) { if (musicOn && music) music.setMood(name, accent); }   /* the theme tooltip names the new piece */
   /* Music is on by default. Browsers only allow sound after the visitor interacts, so it starts on the
      first tap, click or key press anywhere. A visitor who mutes it stays muted on later visits. */
   /* iPhone only counts touchend, click and key presses as permission to play sound, so pointerdown is left out */
