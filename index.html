@@ -1830,7 +1830,19 @@ var FORM_ENDPOINT = '';
   function musicMood(name, accent) { if (musicOn && music) { music.setMood(name, accent); musicTip('Music: <b>' + MLABEL[name] + '</b>'); } }
   /* Music is on by default. Browsers only allow sound after the visitor interacts, so it starts on the
      first tap, click or key press anywhere. A visitor who mutes it stays muted on later visits. */
-  var armed = false, gestureEvents = ['pointerdown', 'touchend', 'keydown', 'click'];
+  /* iPhone only counts touchend, click and key presses as permission to play sound, so pointerdown is left out */
+  var armed = false, gestureEvents = ['touchend', 'click', 'keydown'], silentEl = null;
+  var SILENT = 'data:audio/wav;base64,UklGRvQHAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YdAHAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+  function unlockAudio() {   /* must run inside the tap itself */
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}   /* iOS 17+: play even when the phone is on silent */
+    try {   /* older iPhones: a silent looping <audio> switches the page to playback mode */
+      if (!silentEl) { silentEl = new Audio(SILENT); silentEl.loop = true; silentEl.setAttribute('playsinline', ''); silentEl.volume = 0.01; }
+      var pr = silentEl.play(); if (pr && pr.catch) pr.catch(function () {});
+    } catch (e) {}
+    try {   /* the classic unlock: start a one-sample buffer straight away */
+      var b = actx.createBuffer(1, 1, actx.sampleRate), src = actx.createBufferSource(); src.buffer = b; src.connect(actx.destination); src.start(0);
+    } catch (e) {}
+  }
   function savePref(v) { try { localStorage.setItem('music', v); } catch (e) {} }
   function ensureCtx() {
     if (actx) return true;
@@ -1844,20 +1856,28 @@ var FORM_ENDPOINT = '';
   }
   function startMusic() {
     if (!ensureCtx()) { musicTip('Music isn\'t supported in this browser'); return; }
-    disarm(); musicOn = true; setBtn(true);
+    musicOn = true; setBtn(true);
+    unlockAudio();
     var go = function () {
       if (!musicOn) return;
+      if (actx.state !== 'running') {   /* the browser didn't allow it from this tap: keep listening for the next one */
+        if (!armed) arm();
+        musicTip('Tap anywhere again to start the <b>music</b>');
+        return;
+      }
+      disarm();
       music.setMood(current, false); music.start();
       clearInterval(musicLoop); musicLoop = setInterval(function () { music.tick(); }, 50); music.tick();
+      musicTip('Music: <b>' + MLABEL[current] + '</b>');
     };
-    if (actx.state !== 'running') actx.resume().then(go, go); else go();
-    musicTip('Music: <b>' + MLABEL[current] + '</b>');
+    var r = null; try { r = actx.resume(); } catch (e) {}
+    if (r && r.then) r.then(go, go); else setTimeout(go, 60);
   }
   function stopMusic() {
     disarm(); musicOn = false; setBtn(false);
     if (music) music.stop();
     musicTip('Music: <b>Off</b> · Tap to play');
-    setTimeout(function () { if (!musicOn && actx) { clearInterval(musicLoop); actx.suspend(); } }, 900);
+    setTimeout(function () { if (!musicOn && actx) { clearInterval(musicLoop); actx.suspend(); if (silentEl) silentEl.pause(); } }, 900);
   }
   function onFirstGesture(e) {
     if (!armed) return;
@@ -1873,7 +1893,8 @@ var FORM_ENDPOINT = '';
   });
   document.addEventListener('visibilitychange', function () {
     if (!musicOn || !actx) return;
-    if (document.hidden) actx.suspend(); else actx.resume();
+    if (document.hidden) { actx.suspend(); if (silentEl) silentEl.pause(); }
+    else { actx.resume(); if (silentEl) { var pr = silentEl.play(); if (pr && pr.catch) pr.catch(function () {}); } }
   });
 
   (function initMusic() {
